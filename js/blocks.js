@@ -212,7 +212,7 @@ BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
 	var blocks = world.blocks;
 	var blockLit = z >= lightmap[x][y];
 	var block = blocks[x][y][z];
-	var bH = block.fluid ? 0.9 : 1.0;
+	var bH = block.fluid && ( z == world.sz - 1 || !blocks[x][y][z+1].fluid ) ? 0.9 : 1.0;
 	
 	// Top
 	if ( z == world.sz - 1 || world.blocks[x][y][z+1].transparent )
