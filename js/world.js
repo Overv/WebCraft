@@ -6,11 +6,6 @@
 // using this class.
 // ==========================================
 
-// Block type enumeration
-
-var BLOCK_AIR = 0;
-var BLOCK_GRASS = 1;
-
 // Constructor( sx, sy, sz )
 //
 // Creates a new world container with the specified world size.
@@ -52,7 +47,7 @@ World.prototype.createFlatWorld = function()
 	for ( var x = 0; x < this.sx; x++ )
 		for ( var y = 0; y < this.sy; y++ )
 			for ( var z = 0; z < this.sz; z++ )
-				this.blocks[x][y][z] = ( z < this.sz / 2 ) ? BLOCK_GRASS : BLOCK_AIR;
+				this.blocks[x][y][z] = ( z < this.sz / 2 ) ? BLOCK.DIRT : BLOCK.AIR;
 }
 
 // getBlock( x, y, z )
@@ -63,6 +58,7 @@ World.prototype.createFlatWorld = function()
 
 World.prototype.getBlock = function( x, y, z )
 {
+	if ( x < 0 || y < 0 || z < 0 || x > this.sx - 1 || y > this.sy - 1 || z > this.sz - 1 ) return BLOCK.AIR;
 	return this.blocks[x][y][z];
 }
 

@@ -25,8 +25,7 @@ var fragmentSource =
 	"varying vec4 vColor;"+
 	"varying vec2 vTexCoord;"+
 	"void main() {"+
-	"	//gl_FragColor = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor );\n"+
-	"	gl_FragColor = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) );\n"+
+	"	gl_FragColor = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor );\n"+
 	"}";
 
 // Constructor( id )
@@ -200,6 +199,7 @@ Renderer.prototype.buildChunks = function( count )
 {
 	var gl = this.gl;
 	var chunks = this.chunks;
+	var world = this.world;
 	
 	for ( var i = 0; i < chunks.length; i++ )
 	{
@@ -213,59 +213,8 @@ Renderer.prototype.buildChunks = function( count )
 			for ( var x = chunk.start[0]; x < chunk.end[0]; x++ ) {
 				for ( var y = chunk.start[1]; y < chunk.end[1]; y++ ) {
 					for ( var z = chunk.start[2]; z < chunk.end[2]; z++ ) {
-						// Top
-						pushQuad(
-							vertices,
-							[ x, y, z + 1.0, 14/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y, z + 1.0, 15/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y + 1.0, z + 1.0, 15/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y + 1.0, z + 1.0, 14/16, 1/16, 1.0, 1.0, 1.0, 1.0 ]
-						);
-						
-						// Bottom
-						pushQuad(
-							vertices,							
-							[ x, y + 1.0, z, 2/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y + 1.0, z, 3/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y, z, 3/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y, z, 2/16, 0.0, 1.0, 1.0, 1.0, 1.0 ]
-						);
-						
-						// Front
-						pushQuad(
-							vertices,
-							[ x, y, z, 3/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y, z, 4/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y, z + 1.0, 4/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y, z + 1.0, 3/16, 0.0, 1.0, 1.0, 1.0, 1.0 ]
-						);
-						
-						// Back
-						pushQuad(
-							vertices,
-							[ x, y + 1.0, z + 1.0, 3/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y + 1.0, z + 1.0, 4/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y + 1.0, z, 4/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y + 1.0, z, 3/16, 1/16, 1.0, 1.0, 1.0, 1.0 ]
-						);
-						
-						// Left
-						pushQuad(
-							vertices,
-							[ x, y, z + 1.0, 3/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y + 1.0, z + 1.0, 4/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y + 1.0, z, 4/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x, y, z, 3/16, 1/16, 1.0, 1.0, 1.0, 1.0 ]
-						);
-						
-						// Right
-						pushQuad(
-							vertices,
-							[ x + 1.0, y, z, 3/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y + 1.0, z, 4/16, 1/16, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y + 1.0, z + 1.0, 4/16, 0.0, 1.0, 1.0, 1.0, 1.0 ],
-							[ x + 1.0, y, z + 1.0, 3/16, 0.0, 1.0, 1.0, 1.0, 1.0 ]
-						);
+						if ( world.blocks[x][y][z] == BLOCK.AIR ) continue;
+						BLOCK.pushVertices( vertices, world, x, y, z );
 					}
 				}
 			}
