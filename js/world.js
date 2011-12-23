@@ -40,14 +40,14 @@ function World( sx, sy, sz )
 // Sets up the world so that the bottom half is filled with dirt
 // and the top half with air.
 
-World.prototype.createFlatWorld = function()
+World.prototype.createFlatWorld = function( height )
 {
 	this.spawnPoint = [ this.sx / 2, this.sy / 2, this.sz / 2 ];
 	
 	for ( var x = 0; x < this.sx; x++ )
 		for ( var y = 0; y < this.sy; y++ )
 			for ( var z = 0; z < this.sz; z++ )
-				this.blocks[x][y][z] = ( z < this.sz / 2 ) ? BLOCK.DIRT : BLOCK.AIR;
+				this.blocks[x][y][z] = z < height ? BLOCK.DIRT : BLOCK.AIR;
 }
 
 // getBlock( x, y, z )

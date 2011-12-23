@@ -24,11 +24,11 @@ BLOCK.AIR = {
 BLOCK.DIRT = {
 	transparent: false,
 	
-	texture: function( world, x, y, z, dir )
+	texture: function( world, lit, x, y, z, dir )
 	{
-		if ( dir == DIRECTION.UP )
+		if ( dir == DIRECTION.UP && lit )
 			return [ 14/16, 0/16, 15/16, 1/16 ];
-		else if ( dir == DIRECTION.DOWN || world.getBlock( x, y, z + 1 ) != BLOCK.AIR ) 
+		else if ( dir == DIRECTION.DOWN || !lit ) 
 			return [ 2/16, 0/16, 3/16, 1/16 ];
 		else
 			return [ 3/16, 0/16, 4/16, 1/16 ];
@@ -44,21 +44,21 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 {
 	var blocks = world.blocks;
 	
+	// Check if this block is being shadowed
+	var lightMultiplier = 1.0;
+	for ( var lz = z + 1; lz < world.sz; lz++ )
+	{
+		if ( !world.blocks[x][y][lz].transparent )
+		{
+			lightMultiplier = 0.6;
+			break;
+		}
+	}
+	
 	// Top
 	if ( z == world.sz - 1 || world.blocks[x][y][z+1].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, x, y, z, DIRECTION.UP );
-		
-		// Check if this surface is being shadowed
-		var lightMultiplier = 1.0;
-		for ( var lz = z + 1; lz < world.sz; lz++ )
-		{
-			if ( !world.blocks[x][y][lz].transparent )
-			{
-				lightMultiplier = 0.5;
-				break;
-			}
-		}
+		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.UP );
 		
 		pushQuad(
 			vertices,
@@ -72,21 +72,21 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	// Bottom
 	if ( z == 0 || world.blocks[x][y][z-1].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, x, y, z, DIRECTION.DOWN );
+		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.DOWN );
 		
 		pushQuad(
 			vertices,							
-			[ x, y + 1.0, z, c[0], c[3], 0.5, 0.5, 0.5, 1.0 ],
-			[ x + 1.0, y + 1.0, z, c[2], c[3], 0.5, 0.5, 0.5, 1.0 ],
-			[ x + 1.0, y, z, c[2], c[1], 0.5, 0.5, 0.5, 1.0 ],
-			[ x, y, z, c[0], c[1], 0.5, 0.5, 0.5, 1.0 ]
+			[ x, y + 1.0, z, c[0], c[3], 0.6, 0.6, 0.6, 1.0 ],
+			[ x + 1.0, y + 1.0, z, c[2], c[3], 0.6, 0.6, 0.6, 1.0 ],
+			[ x + 1.0, y, z, c[2], c[1], 0.6, 0.6, 0.6, 1.0 ],
+			[ x, y, z, c[0], c[1], 0.6, 0.6, 0.6, 1.0 ]
 		);
 	}
 	
 	// Front
 	if ( y == 0 || world.blocks[x][y-1][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, x, y, z, DIRECTION.FORWARD );
+		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.FORWARD );
 		
 		pushQuad(
 			vertices,
@@ -100,35 +100,35 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	// Back
 	if ( y == world.sy - 1 || world.blocks[x][y+1][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, x, y, z, DIRECTION.BACK );
+		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.BACK );
 		
 		pushQuad(
 			vertices,
-			[ x, y + 1.0, z + 1.0, c[0], c[1], 0.5, 0.5, 0.5, 1.0 ],
-			[ x + 1.0, y + 1.0, z + 1.0, c[2], c[1], 0.5, 0.5, 0.5, 1.0 ],
-			[ x + 1.0, y + 1.0, z, c[2], c[3], 0.5, 0.5, 0.5, 1.0 ],
-			[ x, y + 1.0, z, c[0], c[3], 0.5, 0.5, 0.5, 1.0 ]
+			[ x, y + 1.0, z + 1.0, c[0], c[1], 0.6, 0.6, 0.6, 1.0 ],
+			[ x + 1.0, y + 1.0, z + 1.0, c[2], c[1], 0.6, 0.6, 0.6, 1.0 ],
+			[ x + 1.0, y + 1.0, z, c[2], c[3], 0.6, 0.6, 0.6, 1.0 ],
+			[ x, y + 1.0, z, c[0], c[3], 0.6, 0.6, 0.6, 1.0 ]
 		);
 	}
 	
 	// Left
 	if ( x == 0 || world.blocks[x-1][y][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, x, y, z, DIRECTION.LEFT );
+		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.LEFT );
 		
 		pushQuad(
 			vertices,
-			[ x, y, z + 1.0, c[0], c[1], 0.5, 0.5, 0.5, 1.0 ],
-			[ x, y + 1.0, z + 1.0, c[2], c[1], 0.5, 0.5, 0.5, 1.0 ],
-			[ x, y + 1.0, z, c[2], c[3], 0.5, 0.5, 0.5, 1.0 ],
-			[ x, y, z, c[0], c[3], 0.5, 0.5, 0.5, 1.0 ]
+			[ x, y, z + 1.0, c[0], c[1], 0.6, 0.6, 0.6, 1.0 ],
+			[ x, y + 1.0, z + 1.0, c[2], c[1], 0.6, 0.6, 0.6, 1.0 ],
+			[ x, y + 1.0, z, c[2], c[3], 0.6, 0.6, 0.6, 1.0 ],
+			[ x, y, z, c[0], c[3], 0.6, 0.6, 0.6, 1.0 ]
 		);
 	}
 	
 	// Right
 	if ( x == world.sx - 1 || world.blocks[x+1][y][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, x, y, z, DIRECTION.RIGHT );
+		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.RIGHT );
 		
 		pushQuad(
 			vertices,

@@ -29,16 +29,18 @@
 		<!-- Initialisation code -->
 		<script type="text/javascript">
 			// Create a new flat world
-			var world = new World( 4, 4, 4 );
-			world.createFlatWorld();
+			var world = new World( 8, 8, 8 );
+			world.createFlatWorld( 2 );
 			
-			// Amazing O
-			world.setBlock( 2, 0, 2, BLOCK.DIRT );
-			world.setBlock( 2, 0, 3, BLOCK.DIRT );
-			world.setBlock( 2, 1, 3, BLOCK.DIRT );
-			world.setBlock( 2, 2, 3, BLOCK.DIRT );
-			world.setBlock( 2, 3, 3, BLOCK.DIRT );
-			world.setBlock( 2, 3, 2, BLOCK.DIRT );
+			// World modification test
+			for ( var i = 2; i <= 4; i++ ) world.setBlock( 1, 1, i, BLOCK.DIRT );
+			for ( var i = 2; i <= 4; i++ ) world.setBlock( 3, 1, i, BLOCK.DIRT );
+			for ( var i = 2; i <= 4; i++ ) world.setBlock( 1, 3, i, BLOCK.DIRT );
+			for ( var i = 2; i <= 4; i++ ) world.setBlock( 3, 3, i, BLOCK.DIRT );
+			world.setBlock( 2, 1, 4, BLOCK.DIRT );
+			world.setBlock( 1, 2, 4, BLOCK.DIRT );
+			world.setBlock( 2, 3, 4, BLOCK.DIRT );
+			world.setBlock( 3, 2, 4, BLOCK.DIRT );
 			
 			// Set up renderer (and draw one test frame)
 			var render = new Renderer( "renderSurface" );
@@ -56,7 +58,7 @@
 				render.buildChunks( 1 );
 				
 				// Draw world
-				render.setCamera( [ 2 + Math.cos( time ) * 8, 2 + Math.sin( time ) * 8, 8 ], [ 2, 2, 2 ] );
+				render.setCamera( [ 4 + Math.cos( time ) * 8, 4 + Math.sin( time ) * 8, 8 ], [ 4, 4, 2 ] );
 				render.draw();
 				
 				// Update FPS

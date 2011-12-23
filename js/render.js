@@ -172,7 +172,7 @@ Renderer.prototype.setWorld = function( world, chunkSize )
 			for ( var z = 0; z < world.sz; z += chunkSize ) {
 				chunks.push( {
 					start: [ x, y, z ],
-					end: [ Math.min( world.sz, x + chunkSize ), Math.min( world.sy, y + chunkSize ), Math.min( world.sz, z + chunkSize ) ],
+					end: [ Math.min( world.sx, x + chunkSize ), Math.min( world.sy, y + chunkSize ), Math.min( world.sz, z + chunkSize ) ],
 					dirty: true
 				} );
 			}
