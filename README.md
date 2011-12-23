@@ -1,0 +1,1 @@
+This project is intented to become a multiplayer Minecraft clone written in pure Javascript.
