@@ -42,7 +42,7 @@ function World( sx, sy, sz )
 
 World.prototype.createFlatWorld = function( height )
 {
-	this.spawnPoint = [ this.sx / 2, this.sy / 2, this.sz / 2 ];
+	this.spawnPoint = [ this.sx / 2, this.sy / 2, height ];
 	
 	for ( var x = 0; x < this.sx; x++ )
 		for ( var y = 0; y < this.sy; y++ )
@@ -67,4 +67,5 @@ World.prototype.getBlock = function( x, y, z )
 World.prototype.setBlock = function( x, y, z, type )
 {
 	this.blocks[x][y][z] = type;
+	if ( this.renderer != null ) this.renderer.onBlockChanged( x, y, z );
 }

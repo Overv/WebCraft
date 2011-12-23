@@ -15,6 +15,7 @@
 		<script src="js/helpers.js" type="text/javascript"></script>
 		<script src="js/world.js" type="text/javascript"></script>
 		<script src="js/render.js" type="text/javascript"></script>
+		<script src="js/physics.js" type="text/javascript"></script>
 	</head>
 	
 	<body>
@@ -27,7 +28,7 @@
 		</div>
 		
 		<!-- Initialisation code -->
-		<script type="text/javascript">
+		<script type="text/javascript">			
 			// Create a new flat world
 			var world = new World( 8, 8, 8 );
 			world.createFlatWorld( 2 );
@@ -42,36 +43,33 @@
 			world.setBlock( 2, 3, 4, BLOCK.DIRT );
 			world.setBlock( 3, 2, 4, BLOCK.DIRT );
 			
-			world.setBlock( 6, 6, 2, BLOCK.PLANK );
-			world.setBlock( 6, 6, 3, BLOCK.COBBLESTONE );
-			world.setBlock( 6, 6, 4, BLOCK.SAND );
-			world.setBlock( 6, 6, 5, BLOCK.WOOD );
-			
-			world.setBlock( 5, 6, 2, BLOCK.BRICK );
-			world.setBlock( 5, 6, 3, BLOCK.CONCRETE );
-			world.setBlock( 5, 6, 4, BLOCK.GRAVEL );
-			world.setBlock( 5, 6, 5, BLOCK.TNT );
-			
-			world.setBlock( 4, 6, 2, BLOCK.IRON );
-			world.setBlock( 4, 6, 3, BLOCK.GOLD );
-			world.setBlock( 4, 6, 4, BLOCK.DIAMOND );
-			world.setBlock( 4, 6, 5, BLOCK.BOOKCASE );
-			
-			world.setBlock( 3, 6, 2, BLOCK.OBSIDIAN );
-			world.setBlock( 3, 6, 3, BLOCK.GLASS );
-			world.setBlock( 3, 6, 4, BLOCK.SPONGE );
+			world.setBlock( 6, 6, 6, BLOCK.SAND );
 			
 			// Set up renderer (and draw one test frame)
 			var render = new Renderer( "renderSurface" );
 			render.setWorld( world, 8 );
 			render.setPerspective( 70, 0.1, 100 );
 			
+			// Create physics simulator
+			var physics = new Physics();
+			physics.setWorld( world );
+			
 			// Render loop
-			var lastSec = new Date().getSeconds();
+			var lastFPSRefresh = new Date().getSeconds();
+			var lastViewportUpdate = new Date().getSeconds();
+			var lastPhysicsUpdate = 0;
 			var frames = 0;
+			
 			setInterval( function()
 			{
 				var time = new Date().getTime() / 1000.0;
+				var sec = new Date().getSeconds();
+				
+				// Simulate physics
+				if ( time - lastPhysicsUpdate > 0.1 ) {
+					physics.simulate();
+					lastPhysicsUpdate = time;
+				}
 				
 				// Build a chunk
 				render.buildChunks( 1 );
@@ -81,10 +79,9 @@
 				render.draw();
 				
 				// Update FPS
-				var sec = new Date().getSeconds();
-				if ( sec != lastSec ) {
+				if ( sec != lastFPSRefresh ) {
 					document.getElementById( "fpsDisplay" ).innerText = "FPS: " + frames;
-					lastSec = sec;
+					lastFPSRefresh = sec;
 					frames = 0;
 				} else {
 					frames++;

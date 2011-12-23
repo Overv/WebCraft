@@ -89,6 +89,7 @@ Renderer.prototype.draw = function()
 	var gl = this.gl;
 	
 	// Initialise view
+	this.updateViewport();
 	gl.viewport( 0, 0, gl.viewportWidth, gl.viewportHeight );
 	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 	
@@ -101,6 +102,29 @@ Renderer.prototype.draw = function()
 			if ( chunks[i].buffer != null ) 
 				this.drawBuffer( chunks[i].buffer );
 		}
+	}
+}
+
+// updateViewport()
+//
+// Check if the viewport is still the same size and update
+// the render configuration if required.
+
+Renderer.prototype.updateViewport = function()
+{
+	var gl = this.gl;
+	var canvas = this.canvas;
+	
+	if ( canvas.clientWidth != gl.viewportWidth || canvas.clientHeight != gl.viewportHeight )
+	{
+		gl.viewportWidth = canvas.clientWidth;
+		gl.viewportHeight = canvas.clientHeight;
+		
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+		
+		// Update perspective projection based on new w/h ratio
+		this.setPerspective( this.fov, this.min, this.max );
 	}
 }
 
@@ -165,6 +189,7 @@ Renderer.prototype.loadShaders = function()
 Renderer.prototype.setWorld = function( world, chunkSize )
 {
 	this.world = world;
+	world.renderer = this;
 	this.chunkSize = chunkSize;
 	
 	// Create chunk list
@@ -179,6 +204,23 @@ Renderer.prototype.setWorld = function( world, chunkSize )
 				} );
 			}
 		}
+	}
+}
+
+// onBlockChanged( x, y, z )
+//
+// Callback from world to inform the renderer of a changed block
+
+Renderer.prototype.onBlockChanged = function( x, y, z )
+{
+	var chunks = this.chunks;
+	
+	for ( var i = 0; i < chunks.length; i++ )
+	{
+		// Neighbouring chunks are updated as well if the block is on a chunk border
+		// Also, all chunks below the block are updated because of lighting
+		if ( x >= chunks[i].start[0] - 1 && x <= chunks[i].end[0] && y >= chunks[i].start[1] - 1 && y <= chunks[i].end[1] && z >= chunks[i].start[2] )
+			chunks[i].dirty = true;
 	}
 }
 
@@ -238,7 +280,7 @@ Renderer.prototype.buildChunks = function( count )
 			}
 			
 			// Create WebGL buffer
-			if ( chunk.buffer ) gl.destroyBuffer( chunk.buffer );
+			if ( chunk.buffer ) gl.deleteBuffer( chunk.buffer );
 			
 			var buffer = chunk.buffer = gl.createBuffer();
 			buffer.vertices = vertices.length / 9;
@@ -260,6 +302,10 @@ Renderer.prototype.buildChunks = function( count )
 Renderer.prototype.setPerspective = function( fov, min, max )
 {
 	var gl = this.gl;
+	
+	this.fov = fov;
+	this.min = min;
+	this.max = max;
 	
 	mat4.perspective( fov, gl.viewportWidth / gl.viewportHeight, min, max, this.projMatrix );
 	gl.uniformMatrix4fv( this.uProjMat, false, this.projMatrix );

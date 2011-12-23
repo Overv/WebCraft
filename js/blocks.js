@@ -17,12 +17,14 @@ BLOCK = {};
 
 // Air
 BLOCK.AIR = {
-	transparent: true
+	transparent: true,
+	gravity: false
 };
 
 // Dirt
 BLOCK.DIRT = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir )
 	{
 		if ( dir == DIRECTION.UP && lit )
@@ -37,6 +39,7 @@ BLOCK.DIRT = {
 // Wood
 BLOCK.WOOD = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir )
 	{
 		if ( dir == DIRECTION.UP || dir == DIRECTION.DOWN )
@@ -49,6 +52,7 @@ BLOCK.WOOD = {
 // TNT
 BLOCK.TNT = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir )
 	{
 		if ( dir == DIRECTION.UP || dir == DIRECTION.DOWN )
@@ -61,6 +65,7 @@ BLOCK.TNT = {
 // Bookcase
 BLOCK.BOOKCASE = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir )
 	{
 		if ( dir == DIRECTION.FORWARD || dir == DIRECTION.BACK )
@@ -73,72 +78,84 @@ BLOCK.BOOKCASE = {
 // Plank
 BLOCK.PLANK = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 4/16, 0/16, 5/16, 1/16 ]; }
 };
 
 // Cobblestone
 BLOCK.COBBLESTONE = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 0/16, 1/16, 1/16, 2/16 ]; }
 };
 
 // Concrete
 BLOCK.CONCRETE = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 0/16, 2/16, 1/16 ]; }
 };
 
 // Brick
 BLOCK.BRICK = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 7/16, 0/16, 8/16, 1/16 ]; }
 };
 
 // Sand
 BLOCK.SAND = {
 	transparent: false,
+	gravity: true,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 2/16, 1/16, 3/16, 2/16 ]; }
 };
 
 // Gravel
 BLOCK.GRAVEL = {
 	transparent: false,
+	gravity: true,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 3/16, 1/16, 4/16, 2/16 ]; }
 };
 
 // Iron
 BLOCK.IRON = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 6/16, 1/16, 7/16, 2/16 ]; }
 };
 
 // Gold
 BLOCK.GOLD = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 7/16, 1/16, 8/16, 2/16 ]; }
 };
 
 // Diamond
 BLOCK.DIAMOND = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 8/16, 1/16, 9/16, 2/16 ]; }
 };
 
 // Obsidian
 BLOCK.OBSIDIAN = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 5/16, 2/16, 6/16, 3/16 ]; }
 };
 
 // Glass
 BLOCK.GLASS = {
 	transparent: true,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 3/16, 2/16, 4/16 ]; }
 };
 
 // Sponge
 BLOCK.SPONGE = {
 	transparent: false,
+	gravity: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 0/16, 3/16, 1/16, 4/16 ]; }
 };
 
