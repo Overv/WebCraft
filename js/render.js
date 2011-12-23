@@ -25,7 +25,9 @@ var fragmentSource =
 	"varying vec4 vColor;"+
 	"varying vec2 vTexCoord;"+
 	"void main() {"+
-	"	gl_FragColor = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor );\n"+
+	"	vec4 color = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor );"+
+	"	if ( color.a < 0.1 ) discard;"+
+	"	gl_FragColor = color;"+
 	"}";
 
 // Constructor( id )
