@@ -54,7 +54,7 @@ function Renderer( id )
 	gl.viewportWidth = canvas.width;
 	gl.viewportHeight = canvas.height;
 	
-	gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+	gl.clearColor( 0.62, 0.81, 1.0, 1.0 );
 	gl.enable( gl.DEPTH_TEST );
 	gl.enable( gl.CULL_FACE );
 	

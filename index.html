@@ -63,6 +63,7 @@
 			var render = new Renderer( "renderSurface" );
 			render.setWorld( world, 8 );
 			render.setPerspective( 70, 0.1, 100 );
+			render.buildChunks( 99 );
 			
 			// Create physics simulator
 			var physics = new Physics();
@@ -84,7 +85,7 @@
 				render.buildChunks( 1 );
 				
 				// Draw world
-				render.setCamera( [ 4 + Math.cos( time ) * 8, 4 + Math.sin( time ) * 8, 8 ], [ 4, 4, 2 ] );
+				render.setCamera( [ 4 + Math.cos( time ) * 8, 4 + Math.sin( time ) * 8, 7 ], [ 4, 4, 1 ] );
 				render.draw();
 				
 				// Update FPS
