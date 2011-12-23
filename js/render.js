@@ -209,12 +209,28 @@ Renderer.prototype.buildChunks = function( count )
 		{
 			var vertices = [];
 			
+			// Create map of lowest blocks that are still lit
+			var lightmap = {};
+			for ( var x = chunk.start[0]; x < chunk.end[0]; x++ )
+			{
+				lightmap[x] = {};
+				
+				for ( var y = chunk.start[1]; y < chunk.end[1]; y++ )
+				{
+					for ( var z = world.sz - 1; z >= 0; z-- )
+					{
+						lightmap[x][y] = z;
+						if ( !world.blocks[x][y][z].transparent ) break;
+					}
+				}
+			}
+			
 			// Add vertices for blocks
 			for ( var x = chunk.start[0]; x < chunk.end[0]; x++ ) {
 				for ( var y = chunk.start[1]; y < chunk.end[1]; y++ ) {
 					for ( var z = chunk.start[2]; z < chunk.end[2]; z++ ) {
 						if ( world.blocks[x][y][z] == BLOCK.AIR ) continue;
-						BLOCK.pushVertices( vertices, world, x, y, z );
+						BLOCK.pushVertices( vertices, world, lightmap, x, y, z );
 					}
 				}
 			}

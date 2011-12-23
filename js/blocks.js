@@ -24,7 +24,7 @@ BLOCK.AIR = {
 BLOCK.DIRT = {
 	transparent: false,
 	
-	texture: function( world, lit, x, y, z, dir )
+	texture: function( world, lightmap, lit, x, y, z, dir )
 	{
 		if ( dir == DIRECTION.UP && lit )
 			return [ 14/16, 0/16, 15/16, 1/16 ];
@@ -35,30 +35,22 @@ BLOCK.DIRT = {
 	}
 };
 
-// pushVertices( vertices, world, x, y, z )
+// pushVertices( vertices, world, lightmap, x, y, z )
 //
 // Pushes the vertices necessary for rendering a
 // specific block into the array.
 
-BLOCK.pushVertices = function( vertices, world, x, y, z )
+BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
 {
 	var blocks = world.blocks;
-	
-	// Check if this block is being shadowed
-	var lightMultiplier = 1.0;
-	for ( var lz = z + 1; lz < world.sz; lz++ )
-	{
-		if ( !world.blocks[x][y][lz].transparent )
-		{
-			lightMultiplier = 0.6;
-			break;
-		}
-	}
+	var blockLit = z >= lightmap[x][y];
 	
 	// Top
 	if ( z == world.sz - 1 || world.blocks[x][y][z+1].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.UP );
+		var c = world.blocks[x][y][z].texture( world, lightmap, blockLit, x, y, z, DIRECTION.UP );
+		
+		var lightMultiplier = z >= lightmap[x][y] ? 1.0 : 0.6;
 		
 		pushQuad(
 			vertices,
@@ -72,7 +64,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	// Bottom
 	if ( z == 0 || world.blocks[x][y][z-1].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.DOWN );
+		var c = world.blocks[x][y][z].texture( world, lightmap, blockLit, x, y, z, DIRECTION.DOWN );
 		
 		pushQuad(
 			vertices,							
@@ -86,21 +78,23 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	// Front
 	if ( y == 0 || world.blocks[x][y-1][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.FORWARD );
+		var c = world.blocks[x][y][z].texture( world, lightmap, blockLit, x, y, z, DIRECTION.FORWARD );
+		
+		var lightMultiplier = ( y == 0 || z >= lightmap[x][y-1] ) ? 1.0 : 0.6;
 		
 		pushQuad(
 			vertices,
-			[ x, y, z, c[0], c[3], 1.0, 1.0, 1.0, 1.0 ],
-			[ x + 1.0, y, z, c[2], c[3], 1.0, 1.0, 1.0, 1.0 ],
-			[ x + 1.0, y, z + 1.0, c[2], c[1], 1.0, 1.0, 1.0, 1.0 ],
-			[ x, y, z + 1.0, c[0], c[1], 1.0, 1.0, 1.0, 1.0 ]
+			[ x, y, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x + 1.0, y, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x + 1.0, y, z + 1.0, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x, y, z + 1.0, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
 		);
 	}
 	
 	// Back
 	if ( y == world.sy - 1 || world.blocks[x][y+1][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.BACK );
+		var c = world.blocks[x][y][z].texture( world, lightmap, blockLit, x, y, z, DIRECTION.BACK );
 		
 		pushQuad(
 			vertices,
@@ -114,7 +108,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	// Left
 	if ( x == 0 || world.blocks[x-1][y][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.LEFT );
+		var c = world.blocks[x][y][z].texture( world, lightmap, blockLit, x, y, z, DIRECTION.LEFT );
 		
 		pushQuad(
 			vertices,
@@ -128,14 +122,16 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	// Right
 	if ( x == world.sx - 1 || world.blocks[x+1][y][z].transparent )
 	{
-		var c = world.blocks[x][y][z].texture( world, lightMultiplier > 0.9, x, y, z, DIRECTION.RIGHT );
+		var c = world.blocks[x][y][z].texture( world, lightmap, blockLit, x, y, z, DIRECTION.RIGHT );
+		
+		var lightMultiplier = ( x == world.sx - 1 || z >= lightmap[x+1][y] ) ? 1.0 : 0.6;
 		
 		pushQuad(
 			vertices,
-			[ x + 1.0, y, z, c[0], c[3], 1.0, 1.0, 1.0, 1.0 ],
-			[ x + 1.0, y + 1.0, z, c[2], c[3], 1.0, 1.0, 1.0, 1.0 ],
-			[ x + 1.0, y + 1.0, z + 1.0, c[2], c[1], 1.0, 1.0, 1.0, 1.0 ],
-			[ x + 1.0, y, z + 1.0, c[0], c[1], 1.0, 1.0, 1.0, 1.0 ]
+			[ x + 1.0, y, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x + 1.0, y + 1.0, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x + 1.0, y + 1.0, z + 1.0, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x + 1.0, y, z + 1.0, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
 		);
 	}
 }
