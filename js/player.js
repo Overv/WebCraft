@@ -40,7 +40,7 @@ Player.prototype.onKeyEvent = function( keyCode, down )
 
 Player.prototype.getEyePos = function()
 {
-	return this.pos.add( new Vector( 0.0, 0.0, 2.0 ) );
+	return this.pos.add( new Vector( 0.0, 0.0, 1.7 ) );
 }
 
 // update()
@@ -53,7 +53,7 @@ Player.prototype.update = function()
 	
 	if ( this.lastUpdate != null )
 	{
-		var delta = new Date().getTime() - this.lastUpdate;
+		var delta = ( new Date().getTime() - this.lastUpdate ) / 1000;
 		
 		// Simulate gravity
 		var bX = Math.floor( this.pos.x );
@@ -62,16 +62,42 @@ Player.prototype.update = function()
 		
 		if ( world.blocks[bX][bY][bZ] == BLOCK.AIR && this.pos.z - bZ > 0.1 )
 		{
-			this.pos.z  -= 0.1;
+			this.pos.z  -= delta * 10;
 		} else if ( bZ > 0 && world.blocks[bX][bY][bZ-1] == BLOCK.AIR ) {
-			this.pos.z -= 0.1;
+			this.pos.z -= delta * 10;
 		}
 		
 		// Rotating the view
 		if ( this.keys["a"] )
-			this.angles[1] -= 0.01;
+			this.angles[1] -= delta * 1.5;
 		else if ( this.keys["d"] )
-			this.angles[1] += 0.01;
+			this.angles[1] += delta * 1.5;
+		
+		// Moving
+		var dX, dY;
+		if ( this.keys["w"] ) {
+			dX = Math.cos( Math.PI / 2 - this.angles[1] );
+			dY = Math.sin( Math.PI / 2 - this.angles[1] );
+		} else if ( this.keys["s"] ) {
+			dX = Math.cos( Math.PI + Math.PI / 2 - this.angles[1] );
+			dY = Math.sin( Math.PI + Math.PI / 2 - this.angles[1] );
+		}
+		
+		if ( dX && dY )
+		{
+			var newBX = Math.floor( this.pos.x + dX / 5 );
+			var newBY = Math.floor( this.pos.y + dY / 5 );
+			
+			if ( newBX >= 0 && newBY >= 0 && newBX < world.sx && newBY < world.sy )
+			{
+				var block = world.blocks[newBX][newBY][bZ];
+				if ( block == BLOCK.AIR )
+				{
+					this.pos.x += dX * 3 * delta;
+					this.pos.y += dY * 3 * delta;
+				}
+			}
+		}
 	}
 	
 	this.lastUpdate = new Date().getTime();
