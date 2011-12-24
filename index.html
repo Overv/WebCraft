@@ -16,6 +16,7 @@
 		<script src="js/world.js" type="text/javascript"></script>
 		<script src="js/render.js" type="text/javascript"></script>
 		<script src="js/physics.js" type="text/javascript"></script>
+		<script src="js/player.js" type="text/javascript"></script>
 	</head>
 	
 	<body>
@@ -56,12 +57,17 @@
 			// Set up renderer (and draw one test frame)
 			var render = new Renderer( "renderSurface" );
 			render.setWorld( world, 8 );
-			render.setPerspective( 70, 0.1, 100 );
-			render.buildChunks( 99 );
+			render.setPerspective( 60, 0.1, 100 );
 			
 			// Create physics simulator
 			var physics = new Physics();
 			physics.setWorld( world );
+			
+			// Create new local player
+			var player = new Player();
+			player.setWorld( world );
+			document.onkeydown = function( e ) { player.onKeyEvent( e.keyCode, true ); }
+			document.onkeyup = function( e ) { player.onKeyEvent( e.keyCode, false ); }
 			
 			// Render loop
 			var lastFPSRefresh = new Date().getSeconds();
@@ -75,11 +81,14 @@
 				// Simulate physics
 				physics.simulate();
 				
+				// Update local player
+				player.update();
+				
 				// Build a chunk
 				render.buildChunks( 1 );
 				
 				// Draw world
-				render.setCamera( [ 4 + Math.cos( time ) * 8, 4 + Math.sin( time ) * 8, 7 ], [ 4, 4, 1 ] );
+				render.setCamera( player.getEyePos().toArray(), player.angles );
 				render.draw();
 				
 				// Update FPS

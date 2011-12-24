@@ -311,15 +311,25 @@ Renderer.prototype.setPerspective = function( fov, min, max )
 	gl.uniformMatrix4fv( this.uProjMat, false, this.projMatrix );
 }
 
-// setCamera( pos, target )
+// setCamera( pos, ang )
 //
-// Moves the camera to the specified position and makes it look at <target>.
+// Moves the camera to the specified orientation.
+//
+// pos - Position in world coordinates.
+// ang - Pitch, yaw and roll.
 
-Renderer.prototype.setCamera = function( pos, target )
+Renderer.prototype.setCamera = function( pos, ang )
 {
 	var gl = this.gl;
 	
-	mat4.lookAt( pos, target, [ 0, 0, 1 ], this.viewMatrix );
+	mat4.identity( this.viewMatrix );
+	
+	mat4.rotate( this.viewMatrix, -ang[0] - Math.PI / 2, [ 1, 0, 0 ], this.viewMatrix );
+	mat4.rotate( this.viewMatrix, ang[1], [ 0, 0, 1 ], this.viewMatrix );
+	mat4.rotate( this.viewMatrix, -ang[2], [ 0, 1, 0 ], this.viewMatrix );
+	
+	mat4.translate( this.viewMatrix, [ -pos[0], -pos[1], -pos[2] ], this.viewMatrix );
+	
 	gl.uniformMatrix4fv( this.uViewMat, false, this.viewMatrix );
 }
 
