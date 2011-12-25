@@ -20,7 +20,9 @@ Player.prototype.setWorld = function( world )
 {
 	this.world = world;
 	this.pos = world.spawnPoint;
+	this.velocity = new Vector( 0, 0, 0 );
 	this.angles = [ 0, 0, 0 ];
+	this.falling = true;
 	this.keys = {};
 }
 
@@ -50,54 +52,54 @@ Player.prototype.getEyePos = function()
 Player.prototype.update = function()
 {
 	var world = this.world;
+	var blocks = world.blocks;
+	var velocity = this.velocity;
+	var pos = this.pos;
+	var bPos = new Vector( Math.floor( pos.x ), Math.floor( pos.y ), Math.floor( pos.z ) );
 	
 	if ( this.lastUpdate != null )
 	{
+		console.log( pos.z );
 		var delta = ( new Date().getTime() - this.lastUpdate ) / 1000;
 		
-		// Simulate gravity
-		var bX = Math.floor( this.pos.x );
-		var bY = Math.floor( this.pos.y );
-		var bZ = Math.floor( this.pos.z );
+		// Rotation
+		if ( this.keys["d"] )
+			this.angles[1] += 1.5 * delta;
+		else if ( this.keys["a"] )
+			this.angles[1] -= 1.5 * delta;
 		
-		if ( world.blocks[bX][bY][bZ] == BLOCK.AIR && this.pos.z - bZ > 0.1 )
+		// Gravity
+		if ( pos.z == 0 || ( blocks[bPos.x][bPos.y][bPos.z-1] != BLOCK.AIR && pos.z == bPos.z ) ) {
+			this.falling = false;
+		} else if ( blocks[bPos.x][bPos.y][bPos.z] != BLOCK.AIR ) {
+			pos.z = bPos.z + 1;
+			velocity.z = 0;
+			this.falling = true;
+		} else {
+			velocity.z += -0.3;
+			this.falling = true;
+		}
+		
+		// Jumping
+		if ( this.keys[" "] && !this.falling )
 		{
-			this.pos.z  -= delta * 10;
-		} else if ( bZ > 0 && world.blocks[bX][bY][bZ-1] == BLOCK.AIR ) {
-			this.pos.z -= delta * 10;
+			velocity.z += 7.2;
 		}
 		
-		// Rotating the view
-		if ( this.keys["a"] )
-			this.angles[1] -= delta * 1.5;
-		else if ( this.keys["d"] )
-			this.angles[1] += delta * 1.5;
-		
-		// Moving
-		var dX, dY;
-		if ( this.keys["w"] ) {
-			dX = Math.cos( Math.PI / 2 - this.angles[1] );
-			dY = Math.sin( Math.PI / 2 - this.angles[1] );
-		} else if ( this.keys["s"] ) {
-			dX = Math.cos( Math.PI + Math.PI / 2 - this.angles[1] );
-			dY = Math.sin( Math.PI + Math.PI / 2 - this.angles[1] );
+		// Walking
+		if ( !this.falling && this.keys["w"] ) {
+			velocity.x = Math.cos( Math.PI / 2 - this.angles[1] ) * 4;
+			velocity.y = Math.sin( Math.PI / 2 - this.angles[1] ) * 4;
+		} else if ( !this.falling && this.keys["s"] ) {
+			velocity.x = -Math.cos( Math.PI / 2 - this.angles[1] ) * 4;
+			velocity.y = -Math.sin( Math.PI / 2 - this.angles[1] ) * 4;
+		} else {
+			velocity.x /= this.falling ? 1.005 : 1.2;
+			velocity.y /= this.falling ? 1.005 : 1.2;
 		}
 		
-		if ( dX && dY )
-		{
-			var newBX = Math.floor( this.pos.x + dX / 5 );
-			var newBY = Math.floor( this.pos.y + dY / 5 );
-			
-			if ( newBX >= 0 && newBY >= 0 && newBX < world.sx && newBY < world.sy )
-			{
-				var block = world.blocks[newBX][newBY][bZ];
-				if ( block == BLOCK.AIR )
-				{
-					this.pos.x += dX * 3 * delta;
-					this.pos.y += dY * 3 * delta;
-				}
-			}
-		}
+		// Perform movement
+		this.pos = this.pos.add( velocity.mul( delta ) );
 	}
 	
 	this.lastUpdate = new Date().getTime();

@@ -44,16 +44,6 @@
 			world.setBlock( 2, 3, 4, BLOCK.DIRT );
 			world.setBlock( 3, 2, 4, BLOCK.DIRT );
 			
-			/*world.setBlock( 7, 6, 2, BLOCK.GLASS );
-			world.setBlock( 6, 7, 2, BLOCK.GLASS );
-			world.setBlock( 7, 7, 2, BLOCK.LAVA );
-			world.setBlock( 6, 7, 3, BLOCK.GLASS );
-			world.setBlock( 7, 6, 3, BLOCK.GLASS );
-			world.setBlock( 7, 7, 3, BLOCK.LAVA );
-			world.setBlock( 6, 7, 4, BLOCK.GLASS );
-			world.setBlock( 7, 6, 4, BLOCK.GLASS );
-			world.setBlock( 7, 7, 4, BLOCK.LAVA );*/
-			
 			// Set up renderer (and draw one test frame)
 			var render = new Renderer( "renderSurface" );
 			render.setWorld( world, 8 );
@@ -66,8 +56,8 @@
 			// Create new local player
 			var player = new Player();
 			player.setWorld( world );
-			document.onkeydown = function( e ) { player.onKeyEvent( e.keyCode, true ); }
-			document.onkeyup = function( e ) { player.onKeyEvent( e.keyCode, false ); }
+			document.onkeydown = function( e ) { player.onKeyEvent( e.keyCode, true ); return false; }
+			document.onkeyup = function( e ) { player.onKeyEvent( e.keyCode, false ); return false; }
 			
 			// Render loop
 			var lastFPSRefresh = new Date().getSeconds();
