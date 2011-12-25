@@ -46,3 +46,17 @@ Vector.prototype.toString = function()
 {
 	return "( " + this.x + ", " + this.y + ", " + this.z + " )";
 }
+
+// lineRectCollide( line, rect )
+//
+// Checks if an axis-aligned line and a bounding box overlap.
+// line = { y, x1, x2 } or line = { x, y1, y2 }
+// rect = { x, y, size }
+
+function lineRectCollide( line, rect )
+{
+	if ( line.y != null )
+		return rect.y > line.y - rect.size/2 && rect.y < line.y + rect.size/2 && rect.x > line.x1 - rect.size/2 && rect.x < line.x2 + rect.size/2;
+	else
+		return rect.x > line.x - rect.size/2 && rect.x < line.x + rect.size/2 && rect.y > line.y1 - rect.size/2 && rect.y < line.y2 + rect.size/2;
+}

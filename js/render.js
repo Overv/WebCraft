@@ -77,7 +77,7 @@ function Renderer( id )
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 		gl.uniform1i(  this.uSampler, 0 );
 	};
-	texture.image.src = "media/terrain.png";
+	texture.image.src = "media/terrain_anybox.png";
 }
 
 // draw()

@@ -21,8 +21,8 @@ Player.prototype.setWorld = function( world )
 	this.world = world;
 	this.pos = world.spawnPoint;
 	this.velocity = new Vector( 0, 0, 0 );
-	this.angles = [ 0, 0, 0 ];
-	this.falling = true;
+	this.angles = [ 0, Math.PI, 0 ];
+	this.falling = false;
 	this.keys = {};
 }
 
@@ -35,7 +35,6 @@ Player.prototype.onKeyEvent = function( keyCode, down )
 	var key = String.fromCharCode( keyCode ).toLowerCase();
 	this.keys[key] = down;
 	this.keys[keyCode] = down;
-	//alert( keyCode );
 }
 
 // getEyePos()
@@ -91,11 +90,11 @@ Player.prototype.update = function()
 			velocity.z += -0.3;
 			this.falling = true;
 		}
-		
+
 		// Jumping
 		if ( this.keys[" "] && !this.falling )
 		{
-			velocity.z += 7.2;
+			velocity.z += 7.5;
 		}
 		
 		// Walking
@@ -128,9 +127,59 @@ Player.prototype.update = function()
 			velocity.y /= this.falling ? 1.005 : 1.2;
 		}
 		
-		// Perform movement
-		this.pos = this.pos.add( velocity.mul( delta ) );
+		// Resolve collision
+		this.pos = this.resolveCollision( pos, bPos, velocity.mul( delta ) );
 	}
 	
 	this.lastUpdate = new Date().getTime();
+}
+
+// resolveCollision( pos, bPos, velocity )
+//
+// Resolves collisions between the player and blocks for the next movement step.
+
+Player.prototype.resolveCollision = function( pos, bPos, velocity )
+{
+	var world = this.world;
+	var playerRect = { x: pos.x + velocity.x, y: pos.y + velocity.y, size: 0.25 };
+	
+	// Collect collision sides
+	var collisionCandidates = [];
+	
+	for ( var x = bPos.x - 1; x <= bPos.x + 1; x++ )
+	{
+		for ( var y = bPos.y - 1; y <= bPos.y + 1; y++ )
+		{
+			for ( var z = bPos.z; z <= bPos.z + 1; z++ )
+			{
+				if ( world.getBlock( x, y, z ) != BLOCK.AIR )
+				{
+					if ( world.getBlock( x - 1, y, z ) == BLOCK.AIR ) collisionCandidates.push( { x: x, dir: -1, y1: y, y2: y + 1 } );
+					if ( world.getBlock( x + 1, y, z ) == BLOCK.AIR ) collisionCandidates.push( { x: x + 1, dir: 1, y1: y, y2: y + 1 } );
+					if ( world.getBlock( x, y - 1, z ) == BLOCK.AIR ) collisionCandidates.push( { y: y, dir: -1, x1: x, x2: x + 1 } );
+					if ( world.getBlock( x, y + 1, z ) == BLOCK.AIR ) collisionCandidates.push( { y: y + 1, dir: 1, x1: x, x2: x + 1 } );
+				}
+			}
+		}
+	}
+	
+	// Solve collisions
+	for( var i in collisionCandidates ) 
+	{
+		var side = collisionCandidates[i];
+		
+		if ( lineRectCollide( side, playerRect ) )
+		{
+			if ( side.x != null && velocity.x * side.dir < 0 ) {
+				pos.x = side.x + playerRect.size / 2 * ( velocity.x > 0 ? -1 : 1 );
+				velocity.x = 0;
+			} else if ( side.y != null && velocity.y * side.dir < 0 ) {
+				pos.y = side.y + playerRect.size / 2 * ( velocity.y > 0 ? -1 : 1 );
+				velocity.y = 0;
+			}
+		}
+	}
+	
+	// Return solution
+	return pos.add( velocity );
 }
