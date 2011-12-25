@@ -53,7 +53,6 @@ Player.prototype.getEyePos = function()
 Player.prototype.update = function()
 {
 	var world = this.world;
-	var blocks = world.blocks;
 	var velocity = this.velocity;
 	var pos = this.pos;
 	var bPos = new Vector( Math.floor( pos.x ), Math.floor( pos.y ), Math.floor( pos.z ) );
@@ -80,9 +79,9 @@ Player.prototype.update = function()
 		this.angles[0] = this.angles[0] > Math.PI/2 ? Math.PI/2 : ( this.angles[0] < -Math.PI/2 ? -Math.PI/2 : this.angles[0] );
 		
 		// Gravity
-		if ( pos.z == 0 || ( blocks[bPos.x][bPos.y][bPos.z-1] != BLOCK.AIR && pos.z == bPos.z ) ) {
+		if ( pos.z == 0 || ( world.getBlock( bPos.x, bPos.y, bPos.z-1 ) != BLOCK.AIR && pos.z == bPos.z ) ) {
 			this.falling = false;
-		} else if ( blocks[bPos.x][bPos.y][bPos.z] != BLOCK.AIR ) {
+		} else if ( world.getBlock( bPos.x, bPos.y, bPos.z ) != BLOCK.AIR ) {
 			pos.z = bPos.z + 1;
 			velocity.z = 0;
 			this.falling = true;
