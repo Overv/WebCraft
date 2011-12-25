@@ -34,6 +34,8 @@ Player.prototype.onKeyEvent = function( keyCode, down )
 {
 	var key = String.fromCharCode( keyCode ).toLowerCase();
 	this.keys[key] = down;
+	this.keys[keyCode] = down;
+	//alert( keyCode );
 }
 
 // getEyePos()
@@ -59,14 +61,24 @@ Player.prototype.update = function()
 	
 	if ( this.lastUpdate != null )
 	{
-		console.log( pos.z );
 		var delta = ( new Date().getTime() - this.lastUpdate ) / 1000;
 		
-		// Rotation
-		if ( this.keys["d"] )
-			this.angles[1] += 1.5 * delta;
-		else if ( this.keys["a"] )
-			this.angles[1] -= 1.5 * delta;
+		// Yaw
+		if ( this.keys[37] ) {
+			this.angles[1] -= 1.4 * delta;
+		}
+		if ( this.keys[39] ) {
+			this.angles[1] += 1.4 * delta;
+		}
+		
+		// Pitch
+		if ( this.keys[38] ) {
+			this.angles[0] -= 1.2 * delta;
+		}
+		if ( this.keys[40] ) {
+			this.angles[0] += 1.2 * delta;
+		}
+		this.angles[0] = this.angles[0] > Math.PI/2 ? Math.PI/2 : ( this.angles[0] < -Math.PI/2 ? -Math.PI/2 : this.angles[0] );
 		
 		// Gravity
 		if ( pos.z == 0 || ( blocks[bPos.x][bPos.y][bPos.z-1] != BLOCK.AIR && pos.z == bPos.z ) ) {
@@ -87,12 +99,30 @@ Player.prototype.update = function()
 		}
 		
 		// Walking
-		if ( !this.falling && this.keys["w"] ) {
-			velocity.x = Math.cos( Math.PI / 2 - this.angles[1] ) * 4;
-			velocity.y = Math.sin( Math.PI / 2 - this.angles[1] ) * 4;
-		} else if ( !this.falling && this.keys["s"] ) {
-			velocity.x = -Math.cos( Math.PI / 2 - this.angles[1] ) * 4;
-			velocity.y = -Math.sin( Math.PI / 2 - this.angles[1] ) * 4;
+		var walkVelocity = new Vector( 0, 0, 0 );
+		if ( !this.falling )
+		{
+			if ( this.keys["w"] ) {
+				walkVelocity.x += Math.cos( Math.PI / 2 - this.angles[1] );
+				walkVelocity.y += Math.sin( Math.PI / 2 - this.angles[1] );
+			}
+			if ( this.keys["s"] ) {
+				walkVelocity.x += Math.cos( Math.PI + Math.PI / 2 - this.angles[1] );
+				walkVelocity.y += Math.sin( Math.PI + Math.PI / 2 - this.angles[1] );
+			}
+			if ( this.keys["a"] ) {
+				walkVelocity.x += Math.cos( Math.PI / 2 + Math.PI / 2 - this.angles[1] );
+				walkVelocity.y += Math.sin( Math.PI / 2 + Math.PI / 2 - this.angles[1] );
+			}
+			if ( this.keys["d"] ) {
+				walkVelocity.x += Math.cos( -Math.PI / 2 + Math.PI / 2 - this.angles[1] );
+				walkVelocity.y += Math.sin( -Math.PI / 2 + Math.PI / 2 - this.angles[1] );
+			}
+		}
+		if ( walkVelocity.length() > 0 ) {
+				walkVelocity = walkVelocity.normal();
+				velocity.x = walkVelocity.x * 4;
+				velocity.y = walkVelocity.y * 4;
 		} else {
 			velocity.x /= this.falling ? 1.005 : 1.2;
 			velocity.y /= this.falling ? 1.005 : 1.2;

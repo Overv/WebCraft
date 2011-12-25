@@ -32,6 +32,7 @@ Vector.prototype.length = function()
 
 Vector.prototype.normal = function()
 {
+	if ( this.x == 0 && this.y == 0 && this.z == 0 ) return new Vector( 0, 0, 0 );
 	var l = this.length();
 	return new Vector( this.x/l, this.y/l, this.z/l );
 }
