@@ -255,16 +255,16 @@ Renderer.prototype.buildChunks = function( count )
 			
 			// Create map of lowest blocks that are still lit
 			var lightmap = {};
-			for ( var x = chunk.start[0]; x < chunk.end[0]; x++ )
+			for ( var x = chunk.start[0] - 1; x < chunk.end[0] + 1; x++ )
 			{
 				lightmap[x] = {};
 				
-				for ( var y = chunk.start[1]; y < chunk.end[1]; y++ )
+				for ( var y = chunk.start[1] - 1; y < chunk.end[1] + 1; y++ )
 				{
 					for ( var z = world.sz - 1; z >= 0; z-- )
 					{
 						lightmap[x][y] = z;
-						if ( !world.blocks[x][y][z].transparent ) break;
+						if ( !world.getBlock( x, y, z ).transparent ) break;
 					}
 				}
 			}
