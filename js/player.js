@@ -43,9 +43,9 @@ Player.prototype.setInputCanvas = function( id )
 	var t = this;
 	document.onkeydown = function( e ) { t.onKeyEvent( e.keyCode, true ); return false; }
 	document.onkeyup = function( e ) { t.onKeyEvent( e.keyCode, false ); return false; }
-	document.onmousedown = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.DOWN ); return false; }
-	document.onmouseup = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.UP ); return false; }
-	document.onmousemove = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.MOVE ); return false; }
+	document.onmousedown = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.DOWN, e.which == 3 ); return false; }
+	document.onmouseup = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.UP, e.which == 3 ); return false; }
+	document.onmousemove = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.MOVE, e.which == 3 ); return false; }
 }
 
 // onKeyEvent( keyCode, down )
@@ -59,27 +59,86 @@ Player.prototype.onKeyEvent = function( keyCode, down )
 	this.keys[keyCode] = down;
 }
 
-// onMouseEvent( keyCode, down )
+// onMouseEvent( x, y, type, rmb )
 //
 // Hook for mouse input.
 
-Player.prototype.onMouseEvent = function( x, y, type )
+Player.prototype.onMouseEvent = function( x, y, type, rmb )
 {
 	if ( type == MOUSE.DOWN ) {
 		this.dragStart = { x: x, y: y };
-		this.dragging = true;
-		
+		this.mouseDown = true;
 		this.yawStart = this.targetYaw = this.angles[1];
 		this.pitchStart = this.targetPitch = this.angles[0];
 	} else if ( type == MOUSE.UP ) {
-		this.dragging = false;
+		if ( Math.abs( this.dragStart.x - x ) + Math.abs( this.dragStart.y - y ) < 4 )	
+			this.doBlockAction( x, y, !rmb );
 		
+		this.dragging = false;
+		this.mouseDown = false;
 		this.canvas.style.cursor = "default";
-	} else if ( type == MOUSE.MOVE && this.dragging ) {
+	} else if ( type == MOUSE.MOVE && this.mouseDown ) {
+		this.dragging = true;
 		this.targetPitch = this.pitchStart - ( y - this.dragStart.y ) / 200;
 		this.targetYaw = this.yawStart + ( x - this.dragStart.x ) / 200;
 		
 		this.canvas.style.cursor = "move";
+	}
+}
+
+// doBlockAction( x, y )
+//
+// Called to perform an action based on the player's block selection and input.
+
+Player.prototype.doBlockAction = function( x, y, destroy )
+{
+	var world = this.world;
+	
+	// Get view ray
+	var res = [];
+	vec3.unproject( [ x, render.gl.viewportHeight - y, 1 ], render.viewMatrix, render.projMatrix, [ 0, 0, render.gl.viewportWidth, render.gl.viewportHeight ], res );
+	var viewLine = { start: this.getEyePos(), dir: new Vector( res[0], res[1], res[2] ).normal() };
+	
+	// Collect block surfaces
+	var blockFaces = [];
+	var bPos = [ Math.floor( this.pos.x ), Math.floor( this.pos.y ), Math.floor( this.pos.z ) ];
+	for ( var x = bPos[0] - 4; x <= bPos[0] + 4; x++ )
+		for ( var y = bPos[1] - 4; y <= bPos[1] + 4; y++ )
+			for ( var z = bPos[2] - 4; z <= bPos[2] + 4; z++ )
+			{
+				if ( world.getBlock( x, y, z ) != BLOCK.AIR )
+				{
+					if ( world.getBlock( x, y, z + 1 ) == BLOCK.AIR ) blockFaces.push( { p: new Vector( x + 0.5, y + 0.5, z + 0.99 ), normal: new Vector( 0, 0, 1 ), block: { x: x, y: y, z: z } } );
+					if ( world.getBlock( x, y, z - 1 ) == BLOCK.AIR ) blockFaces.push( { p: new Vector( x + 0.5, y + 0.5, z ), normal: new Vector( 0, 0, -1 ), block: { x: x, y: y, z: z } } );
+					
+					if ( world.getBlock( x, y + 1, z ) == BLOCK.AIR ) blockFaces.push( { p: new Vector( x + 0.5, y + 0.99, z + 0.5 ), normal: new Vector( 0, 1, 0 ), block: { x: x, y: y, z: z } } );
+					if ( world.getBlock( x, y - 1, z ) == BLOCK.AIR ) blockFaces.push( { p: new Vector( x + 0.5, y, z + 0.5 ), normal: new Vector( 0, -1, 0 ), block: { x: x, y: y, z: z } } );
+					
+					if ( world.getBlock( x + 1, y, z ) == BLOCK.AIR ) blockFaces.push( { p: new Vector( x + 0.99, y + 0.5, z + 0.5 ), normal: new Vector( 1, 0, 0 ), block: { x: x, y: y, z: z } } );
+					if ( world.getBlock( x - 1, y, z ) == BLOCK.AIR ) blockFaces.push( { p: new Vector( x, y + 0.5, z + 0.5 ), normal: new Vector( -1, 0, 0 ), block: { x: x, y: y, z: z } } );
+				}
+			}
+	
+	// Find closest intersection
+	var intersection = { pos: new Vector( 0, 0, 0 ), distance: 999, normal: new Vector( 0, 0, 0 ) };
+	for ( var i in blockFaces )
+	{
+		var hit = linePlaneIntersect( viewLine, blockFaces[i] );
+		var block = blockFaces[i].block;
+		
+		if ( hit != false && hit.x >= block.x && hit.x <= block.x+1 && hit.y >= block.y && hit.y <= block.y+1 && hit.z >= block.z && hit.z <= block.z+1 && hit.distance( viewLine.start ) < intersection.distance )
+			intersection = {
+				pos: new Vector( Math.floor( hit.x ), Math.floor( hit.y ), Math.floor( hit.z ) ),
+				distance: hit.distance( viewLine.start ),
+				normal: blockFaces[i].normal
+			};
+	}
+	
+	if ( intersection.distance < 10 ) {
+		if ( destroy )
+			world.setBlock( intersection.pos.x, intersection.pos.y, intersection.pos.z, BLOCK.AIR );
+		else
+			world.setBlock( intersection.pos.x + intersection.normal.x, intersection.pos.y + intersection.normal.y, intersection.pos.z + intersection.normal.z, BLOCK.DIRT );
 	}
 }
 
