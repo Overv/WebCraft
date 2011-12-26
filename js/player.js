@@ -76,8 +76,8 @@ Player.prototype.onMouseEvent = function( x, y, type )
 		
 		this.canvas.style.cursor = "default";
 	} else if ( type == MOUSE.MOVE && this.dragging ) {
-		this.targetPitch = this.pitchStart - ( y - this.dragStart.y ) / 200;
-		this.targetYaw = this.yawStart + ( x - this.dragStart.x ) / 200;
+		this.targetPitch = this.pitchStart - ( y - this.dragStart.y ) / 300;
+		this.targetYaw = this.yawStart + ( x - this.dragStart.x ) / 300;
 		
 		this.canvas.style.cursor = "move";
 	}
@@ -115,22 +115,12 @@ Player.prototype.update = function()
 		}
 		
 		// Gravity
-		if ( pos.z == 0 || ( world.getBlock( bPos.x, bPos.y, bPos.z-1 ) != BLOCK.AIR && pos.z == bPos.z ) ) {
-			this.falling = false;
-		} else if ( world.getBlock( bPos.x, bPos.y, bPos.z ) != BLOCK.AIR ) {
-			pos.z = bPos.z + 1;
-			velocity.z = 0;
-			this.falling = true;
-		} else {
+		if ( this.falling )
 			velocity.z += -0.3;
-			this.falling = true;
-		}
 
 		// Jumping
 		if ( this.keys[" "] && !this.falling )
-		{
-			velocity.z += 7.5;
-		}
+			velocity.z = 7.5;
 		
 		// Walking
 		var walkVelocity = new Vector( 0, 0, 0 );
@@ -171,14 +161,14 @@ Player.prototype.update = function()
 
 // resolveCollision( pos, bPos, velocity )
 //
-// Resolves collisions between the player and blocks for the next movement step.
+// Resolves collisions between the player and blocks on XY level for the next movement step.
 
 Player.prototype.resolveCollision = function( pos, bPos, velocity )
 {
 	var world = this.world;
 	var playerRect = { x: pos.x + velocity.x, y: pos.y + velocity.y, size: 0.25 };
 	
-	// Collect collision sides
+	// Collect XY collision sides
 	var collisionCandidates = [];
 	
 	for ( var x = bPos.x - 1; x <= bPos.x + 1; x++ )
@@ -198,7 +188,7 @@ Player.prototype.resolveCollision = function( pos, bPos, velocity )
 		}
 	}
 	
-	// Solve collisions
+	// Solve XY collisions
 	for( var i in collisionCandidates ) 
 	{
 		var side = collisionCandidates[i];
@@ -212,6 +202,45 @@ Player.prototype.resolveCollision = function( pos, bPos, velocity )
 				pos.y = side.y + playerRect.size / 2 * ( velocity.y > 0 ? -1 : 1 );
 				velocity.y = 0;
 			}
+		}
+	}
+	
+	var playerFace = { x1: pos.x + velocity.x - 0.125, y1: pos.y + velocity.y - 0.125, x2: pos.x + velocity.x + 0.125, y2: pos.y + velocity.y + 0.125 };
+	var newBZLower = Math.floor( pos.z + ( velocity.z < 0 ? -0.1 : 0.1 ) );
+	var newBZUpper = Math.floor( pos.z + 1.7 + ( velocity.z < 0 ? -0.2 : 0.2 ) );
+	
+	// Collect Z collision sides
+	collisionCandidates = [];
+	
+	for ( var x = bPos.x - 1; x <= bPos.x + 1; x++ ) 
+	{
+		for ( var y = bPos.y - 1; y <= bPos.y + 1; y++ )
+		{
+			if ( world.getBlock( x, y, newBZLower ) != BLOCK.AIR )
+				collisionCandidates.push( { z: newBZLower + 1, dir: 1, x1: x, y1: y, x2: x + 1, y2: y + 1 } );
+			if ( world.getBlock( x, y, newBZUpper ) != BLOCK.AIR )
+				collisionCandidates.push( { z: newBZUpper, dir: -1, x1: x, y1: y, x2: x + 1, y2: y + 1 } );
+		}
+	}
+	
+	// Solve Z collisions
+	this.falling = true;
+	for ( var i in collisionCandidates )
+	{
+		var face = collisionCandidates[i];
+		
+		if ( rectRectCollide( face, playerFace ) && velocity.z * face.dir < 0 )
+		{
+			if ( velocity.z < 0 ) {
+				this.falling = false;
+				pos.z = face.z;
+				velocity.z = 0;
+			} else {
+				pos.z = face.z - 1.8;
+				velocity.z = 0;
+			}
+			
+			break;
 		}
 	}
 	

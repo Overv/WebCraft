@@ -31,7 +31,7 @@
 		<!-- Initialisation code -->
 		<script type="text/javascript">			
 			// Create a new flat world
-			var world = new World( 16, 16, 8 );
+			var world = new World( 16, 16, 16 );
 			world.createFlatWorld( 2 );
 			
 			/// World modification test
@@ -51,7 +51,7 @@
 			// Set up renderer
 			var render = new Renderer( "renderSurface" );
 			render.setWorld( world, 8 );
-			render.setPerspective( 60, 0.01, 100 );
+			render.setPerspective( 60, 0.01, 300 );
 			
 			// Create physics simulator
 			var physics = new Physics();
