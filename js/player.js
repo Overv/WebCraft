@@ -76,8 +76,8 @@ Player.prototype.onMouseEvent = function( x, y, type )
 		
 		this.canvas.style.cursor = "default";
 	} else if ( type == MOUSE.MOVE && this.dragging ) {
-		this.targetPitch = this.pitchStart - ( y - this.dragStart.y ) / 300;
-		this.targetYaw = this.yawStart + ( x - this.dragStart.x ) / 300;
+		this.targetPitch = this.pitchStart - ( y - this.dragStart.y ) / 200;
+		this.targetYaw = this.yawStart + ( x - this.dragStart.x ) / 200;
 		
 		this.canvas.style.cursor = "move";
 	}
@@ -110,17 +110,19 @@ Player.prototype.update = function()
 		// View
 		if ( this.dragging )
 		{
-			this.angles[0] += ( this.targetPitch - this.angles[0] ) * 2 * delta;
-			this.angles[1] += ( this.targetYaw - this.angles[1] ) * 2 * delta;
+			this.angles[0] += ( this.targetPitch - this.angles[0] ) * 30 * delta;
+			this.angles[1] += ( this.targetYaw - this.angles[1] ) * 30 * delta;
+			if ( this.angles[0] < -Math.PI/2 ) this.angles[0] = -Math.PI/2;
+			if ( this.angles[0] > Math.PI/2 ) this.angles[0] = Math.PI/2;
 		}
 		
 		// Gravity
 		if ( this.falling )
-			velocity.z += -0.3;
+			velocity.z += -0.5;
 
 		// Jumping
 		if ( this.keys[" "] && !this.falling )
-			velocity.z = 7.5;
+			velocity.z = 8;
 		
 		// Walking
 		var walkVelocity = new Vector( 0, 0, 0 );
@@ -148,8 +150,8 @@ Player.prototype.update = function()
 				velocity.x = walkVelocity.x * 4;
 				velocity.y = walkVelocity.y * 4;
 		} else {
-			velocity.x /= this.falling ? 1.005 : 1.2;
-			velocity.y /= this.falling ? 1.005 : 1.2;
+			velocity.x /= this.falling ? 1.01 : 1.5;
+			velocity.y /= this.falling ? 1.01 : 1.5;
 		}
 		
 		// Resolve collision

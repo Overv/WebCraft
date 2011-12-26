@@ -23,11 +23,6 @@
 		<!-- Render surface -->
 		<canvas id="renderSurface"></canvas>
 		
-		<!-- FPS display -->
-		<div id="fpsContainer">
-			<span id="fpsDisplay">FPS: -</span>
-		</div>
-		
 		<!-- Initialisation code -->
 		<script type="text/javascript">			
 			// Create a new flat world
@@ -62,14 +57,10 @@
 			player.setWorld( world );
 			player.setInputCanvas( "renderSurface" );
 			
-			// Render loop
-			var lastFPSRefresh = new Date().getSeconds();
-			var frames = 0;
-			
+			// Render loop			
 			setInterval( function()
 			{
 				var time = new Date().getTime() / 1000.0;
-				var sec = new Date().getSeconds();
 				
 				// Simulate physics
 				physics.simulate();
@@ -84,14 +75,7 @@
 				render.setCamera( player.getEyePos().toArray(), player.angles );
 				render.draw();
 				
-				// Update FPS
-				if ( sec != lastFPSRefresh ) {
-					document.getElementById( "fpsDisplay" ).innerHTML = "FPS: " + frames;
-					lastFPSRefresh = sec;
-					frames = 0;
-				} else {
-					frames++;
-				}
+				while ( new Date().getTime() / 1000 - time < 0.016 );
 			}, 1 );
 		</script>
 	</body>
