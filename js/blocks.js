@@ -20,6 +20,12 @@ BLOCK.AIR = {
 	transparent: true
 };
 
+// Bedrock
+BLOCK.BEDROCK = {
+	transparent: false,
+	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 1/16, 2/16, 2/16 ]; }
+};
+
 // Dirt
 BLOCK.DIRT = {
 	transparent: false,
@@ -88,10 +94,7 @@ BLOCK.LAVA = {
 	selflit: true,
 	gravity: true,
 	fluid: true,
-	texture: function( world, lightmap, lit, x, y, z, dir )
-	{
-		return [ 13/16, 14/16, 14/16, 15/16 ];
-	}
+	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 13/16, 14/16, 14/16, 15/16 ]; }
 };
 
 // Plank
