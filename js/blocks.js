@@ -17,17 +17,20 @@ BLOCK = {};
 
 // Air
 BLOCK.AIR = {
+	spawnable: false,
 	transparent: true
 };
 
 // Bedrock
 BLOCK.BEDROCK = {
+	spawnable: false,
 	transparent: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 1/16, 2/16, 2/16 ]; }
 };
 
 // Dirt
 BLOCK.DIRT = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -45,6 +48,7 @@ BLOCK.DIRT = {
 
 // Wood
 BLOCK.WOOD = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -60,6 +64,7 @@ BLOCK.WOOD = {
 
 // TNT
 BLOCK.TNT = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -75,6 +80,7 @@ BLOCK.TNT = {
 
 // Bookcase
 BLOCK.BOOKCASE = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -90,6 +96,7 @@ BLOCK.BOOKCASE = {
 
 // Lava
 BLOCK.LAVA = {
+	spawnable: false,
 	transparent: true,
 	selflit: true,
 	gravity: true,
@@ -99,6 +106,7 @@ BLOCK.LAVA = {
 
 // Plank
 BLOCK.PLANK = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -108,6 +116,7 @@ BLOCK.PLANK = {
 
 // Cobblestone
 BLOCK.COBBLESTONE = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -117,6 +126,7 @@ BLOCK.COBBLESTONE = {
 
 // Concrete
 BLOCK.CONCRETE = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -126,6 +136,7 @@ BLOCK.CONCRETE = {
 
 // Brick
 BLOCK.BRICK = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -135,6 +146,7 @@ BLOCK.BRICK = {
 
 // Sand
 BLOCK.SAND = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: true,
@@ -144,6 +156,7 @@ BLOCK.SAND = {
 
 // Gravel
 BLOCK.GRAVEL = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: true,
@@ -153,6 +166,7 @@ BLOCK.GRAVEL = {
 
 // Iron
 BLOCK.IRON = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -162,6 +176,7 @@ BLOCK.IRON = {
 
 // Gold
 BLOCK.GOLD = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -171,6 +186,7 @@ BLOCK.GOLD = {
 
 // Diamond
 BLOCK.DIAMOND = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -180,6 +196,7 @@ BLOCK.DIAMOND = {
 
 // Obsidian
 BLOCK.OBSIDIAN = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
@@ -189,6 +206,7 @@ BLOCK.OBSIDIAN = {
 
 // Glass
 BLOCK.GLASS = {
+	spawnable: true,
 	transparent: true,
 	selflit: false,
 	gravity: false,
@@ -198,6 +216,7 @@ BLOCK.GLASS = {
 
 // Sponge
 BLOCK.SPONGE = {
+	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,

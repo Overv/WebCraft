@@ -30,6 +30,7 @@ Player.prototype.setWorld = function( world )
 	this.angles = [ 0, Math.PI, 0 ];
 	this.falling = false;
 	this.keys = {};
+	this.buildMaterial = BLOCK.DIRT;
 }
 
 // setInputCanvas( id )
@@ -43,9 +44,48 @@ Player.prototype.setInputCanvas = function( id )
 	var t = this;
 	document.onkeydown = function( e ) { t.onKeyEvent( e.keyCode, true ); return false; }
 	document.onkeyup = function( e ) { t.onKeyEvent( e.keyCode, false ); return false; }
-	document.onmousedown = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.DOWN, e.which == 3 ); return false; }
-	document.onmouseup = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.UP, e.which == 3 ); return false; }
-	document.onmousemove = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.MOVE, e.which == 3 ); return false; }
+	canvas.onmousedown = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.DOWN, e.which == 3 ); return false; }
+	canvas.onmouseup = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.UP, e.which == 3 ); return false; }
+	canvas.onmousemove = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.MOVE, e.which == 3 ); return false; }
+}
+
+// setMaterialSelector( id )
+//
+// Sets the table with the material selectors.
+
+Player.prototype.setMaterialSelector = function( id )
+{
+	var tableRow = document.getElementById( id ).getElementsByTagName( "tr" )[0];
+	var texOffset = 0;
+	
+	for ( var mat in BLOCK )
+	{
+		if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat].spawnable == true )
+		{
+			var selector = document.createElement( "td" );
+			selector.style.backgroundPosition = texOffset + "px 0px";
+			
+			var pl = this;
+			selector.material = BLOCK[mat];
+			selector.onclick = function()
+			{
+				this.style.opacity = "1.0";
+				
+				pl.prevSelector.style.opacity = null;
+				pl.prevSelector = this;
+				
+				pl.buildMaterial = this.material;
+			}
+			
+			if ( mat == "DIRT" ) {
+				this.prevSelector = selector;
+				selector.style.opacity = "1.0";
+			}
+			
+			tableRow.appendChild( selector );
+			texOffset -= 70;
+		}
+	}
 }
 
 // onKeyEvent( keyCode, down )
@@ -138,7 +178,7 @@ Player.prototype.doBlockAction = function( x, y, destroy )
 		if ( destroy )
 			world.setBlock( intersection.pos.x, intersection.pos.y, intersection.pos.z, BLOCK.AIR );
 		else
-			world.setBlock( intersection.pos.x + intersection.normal.x, intersection.pos.y + intersection.normal.y, intersection.pos.z + intersection.normal.z, BLOCK.DIRT );
+			world.setBlock( intersection.pos.x + intersection.normal.x, intersection.pos.y + intersection.normal.y, intersection.pos.z + intersection.normal.z, this.buildMaterial );
 	}
 }
 

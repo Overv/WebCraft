@@ -23,25 +23,16 @@
 		<!-- Render surface -->
 		<canvas id="renderSurface"></canvas>
 		
+		<!-- Material selection -->
+		<table id="materialSelector">
+			<tr></tr>
+		</table>
+		
 		<!-- Initialisation code -->
 		<script type="text/javascript">			
 			// Create a new flat world
 			var world = new World( 16, 16, 16 );
 			world.createFlatWorld( 2 );
-			
-			/// World modification test
-			for ( var i = 2; i <= 4; i++ ) world.setBlock( 1, 1, i, BLOCK.DIRT );
-			for ( var i = 2; i <= 4; i++ ) world.setBlock( 3, 1, i, BLOCK.DIRT );
-			for ( var i = 2; i <= 4; i++ ) world.setBlock( 1, 3, i, BLOCK.DIRT );
-			for ( var i = 2; i <= 4; i++ ) world.setBlock( 3, 3, i, BLOCK.DIRT );
-			world.setBlock( 2, 1, 4, BLOCK.DIRT );
-			world.setBlock( 1, 2, 4, BLOCK.DIRT );
-			world.setBlock( 2, 3, 4, BLOCK.DIRT );
-			world.setBlock( 3, 2, 4, BLOCK.DIRT );
-			
-			world.setBlock( 4, 3, 3, BLOCK.DIRT );
-			world.setBlock( 4, 3, 2, BLOCK.DIRT );
-			world.setBlock( 5, 3, 2, BLOCK.DIRT );
 			
 			// Set up renderer
 			var render = new Renderer( "renderSurface" );
@@ -56,6 +47,7 @@
 			var player = new Player();
 			player.setWorld( world );
 			player.setInputCanvas( "renderSurface" );
+			player.setMaterialSelector( "materialSelector" );
 			
 			// Render loop			
 			setInterval( function()
@@ -69,7 +61,7 @@
 				player.update();
 				
 				// Build a chunk
-				render.buildChunks( 1 );
+				render.buildChunks( 5 );
 				
 				// Draw world
 				render.setCamera( player.getEyePos().toArray(), player.angles );

@@ -15,17 +15,32 @@ body {
 	height: 100%;
 }
 
-/* FPS display */
+/* Material selector */
 
-#fpsContainer {
-	position: absolute;
-	left: 10px;
-	top: 10px;
+#materialSelector {
+	position: relative;
+	margin: auto;
+	
+	background: rgba( 0, 0, 0, 0.6 );
 }
 
-#fpsDisplay {
-	font-family: sans-serif;
-	font-size: 12px;
+#materialSelector tr {
+	height: 70px;
+}
+
+#materialSelector td {
+	width: 70px;
+	margin: 0;
+	padding: 0;
 	
-	color: white;
+	cursor: pointer;
+	
+	opacity: 0.3;
+	
+	background: url( '../media/blockthumbs.png' );
+	background-position: 0px 0px;
+}
+
+#materialSelector td:hover {
+	opacity: 0.8;
 }
