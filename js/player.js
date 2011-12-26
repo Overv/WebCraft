@@ -206,8 +206,8 @@ Player.prototype.resolveCollision = function( pos, bPos, velocity )
 	}
 	
 	var playerFace = { x1: pos.x + velocity.x - 0.125, y1: pos.y + velocity.y - 0.125, x2: pos.x + velocity.x + 0.125, y2: pos.y + velocity.y + 0.125 };
-	var newBZLower = Math.floor( pos.z + ( velocity.z < 0 ? -0.1 : 0.1 ) );
-	var newBZUpper = Math.floor( pos.z + 1.7 + ( velocity.z < 0 ? -0.2 : 0.2 ) );
+	var newBZLower = Math.floor( pos.z + velocity.z );
+	var newBZUpper = Math.floor( pos.z + 1.7 + velocity.z * 1.1 );
 	
 	// Collect Z collision sides
 	collisionCandidates = [];
@@ -235,9 +235,11 @@ Player.prototype.resolveCollision = function( pos, bPos, velocity )
 				this.falling = false;
 				pos.z = face.z;
 				velocity.z = 0;
+				this.velocity.z = 0;
 			} else {
 				pos.z = face.z - 1.8;
 				velocity.z = 0;
+				this.velocity.z = 0;
 			}
 			
 			break;
