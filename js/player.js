@@ -4,6 +4,12 @@
 // This class contains the code that manages the local player.
 // ==========================================
 
+// Mouse event enumeration
+MOUSE = {};
+MOUSE.DOWN = 1;
+MOUSE.UP = 2;
+MOUSE.MOVE = 3;
+
 // Constructor()
 //
 // Creates a new local player manager.
@@ -26,6 +32,22 @@ Player.prototype.setWorld = function( world )
 	this.keys = {};
 }
 
+// setInputCanvas( id )
+//
+// Set the canvas the renderer uses for some input operations.
+
+Player.prototype.setInputCanvas = function( id )
+{
+	var canvas = this.canvas = document.getElementById( id );
+	
+	var t = this;
+	document.onkeydown = function( e ) { t.onKeyEvent( e.keyCode, true ); return false; }
+	document.onkeyup = function( e ) { t.onKeyEvent( e.keyCode, false ); return false; }
+	document.onmousedown = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.DOWN ); return false; }
+	document.onmouseup = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.UP ); return false; }
+	document.onmousemove = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.MOVE ); return false; }
+}
+
 // onKeyEvent( keyCode, down )
 //
 // Hook for keyboard input.
@@ -35,6 +57,30 @@ Player.prototype.onKeyEvent = function( keyCode, down )
 	var key = String.fromCharCode( keyCode ).toLowerCase();
 	this.keys[key] = down;
 	this.keys[keyCode] = down;
+}
+
+// onMouseEvent( keyCode, down )
+//
+// Hook for mouse input.
+
+Player.prototype.onMouseEvent = function( x, y, type )
+{
+	if ( type == MOUSE.DOWN ) {
+		this.dragStart = { x: x, y: y };
+		this.dragging = true;
+		
+		this.yawStart = this.targetYaw = this.angles[1];
+		this.pitchStart = this.targetPitch = this.angles[0];
+	} else if ( type == MOUSE.UP ) {
+		this.dragging = false;
+		
+		this.canvas.style.cursor = "default";
+	} else if ( type == MOUSE.MOVE && this.dragging ) {
+		this.targetPitch = this.pitchStart - ( y - this.dragStart.y ) / 200;
+		this.targetYaw = this.yawStart + ( x - this.dragStart.x ) / 200;
+		
+		this.canvas.style.cursor = "move";
+	}
 }
 
 // getEyePos()
@@ -61,22 +107,12 @@ Player.prototype.update = function()
 	{
 		var delta = ( new Date().getTime() - this.lastUpdate ) / 1000;
 		
-		// Yaw
-		if ( this.keys[37] ) {
-			this.angles[1] -= 1.4 * delta;
+		// View
+		if ( this.dragging )
+		{
+			this.angles[0] += ( this.targetPitch - this.angles[0] ) * 2 * delta;
+			this.angles[1] += ( this.targetYaw - this.angles[1] ) * 2 * delta;
 		}
-		if ( this.keys[39] ) {
-			this.angles[1] += 1.4 * delta;
-		}
-		
-		// Pitch
-		if ( this.keys[38] ) {
-			this.angles[0] -= 1.2 * delta;
-		}
-		if ( this.keys[40] ) {
-			this.angles[0] += 1.2 * delta;
-		}
-		this.angles[0] = this.angles[0] > Math.PI/2 ? Math.PI/2 : ( this.angles[0] < -Math.PI/2 ? -Math.PI/2 : this.angles[0] );
 		
 		// Gravity
 		if ( pos.z == 0 || ( world.getBlock( bPos.x, bPos.y, bPos.z-1 ) != BLOCK.AIR && pos.z == bPos.z ) ) {

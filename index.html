@@ -60,8 +60,7 @@
 			// Create new local player
 			var player = new Player();
 			player.setWorld( world );
-			document.onkeydown = function( e ) { player.onKeyEvent( e.keyCode, true ); return false; }
-			document.onkeyup = function( e ) { player.onKeyEvent( e.keyCode, false ); return false; }
+			player.setInputCanvas( "renderSurface" );
 			
 			// Render loop
 			var lastFPSRefresh = new Date().getSeconds();
@@ -87,7 +86,7 @@
 				
 				// Update FPS
 				if ( sec != lastFPSRefresh ) {
-					document.getElementById( "fpsDisplay" ).innerText = "FPS: " + frames;
+					document.getElementById( "fpsDisplay" ).innerHTML = "FPS: " + frames;
 					lastFPSRefresh = sec;
 					frames = 0;
 				} else {
