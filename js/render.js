@@ -25,9 +25,9 @@ var fragmentSource =
 	"varying vec4 vColor;"+
 	"varying vec2 vTexCoord;"+
 	"void main() {"+
-	"	vec4 color = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor );"+
+	"	vec4 color = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor.rgb, 1.0 );"+
 	"	if ( color.a < 0.1 ) discard;"+
-	"	gl_FragColor = color;"+
+	"	gl_FragColor = vec4( color.rgb, vColor.a );"+
 	"}";
 
 // Constructor( id )
@@ -39,6 +39,7 @@ var fragmentSource =
 function Renderer( id )
 {
 	var canvas = this.canvas = document.getElementById( id );
+	canvas.renderer = this;
 	canvas.width = canvas.clientWidth;
 	canvas.height = canvas.clientHeight;
 	
@@ -65,17 +66,25 @@ function Renderer( id )
 	var projMatrix = this.projMatrix = mat4.create();
 	var viewMatrix = this.viewMatrix = mat4.create();
 	
+	// Create 1px white texture for pure vertex color operations (e.g. picking)
+	var texture = this.texWhite = gl.createTexture();
+	gl.activeTexture( gl.TEXTURE0 );
+	gl.bindTexture( gl.TEXTURE_2D, texture );
+	var white = new Uint8Array( [ 255, 255, 255, 255 ] );
+	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, white );
+	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+	gl.uniform1i(  this.uSampler, 0 );
+	
 	// Load terrain texture
 	var texture = this.texTerrain = gl.createTexture();
 	texture.image = new Image();
 	texture.image.onload = function()
 	{
-		gl.activeTexture( gl.TEXTURE0 );
 		gl.bindTexture( gl.TEXTURE_2D, texture );
 		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
-		gl.uniform1i(  this.uSampler, 0 );
 	};
 	texture.image.src = "media/terrain.png";
 }
@@ -102,6 +111,98 @@ Renderer.prototype.draw = function()
 			if ( chunks[i].buffer != null ) 
 				this.drawBuffer( chunks[i].buffer );
 		}
+	}
+}
+
+// pickAt( min, max, mx, myy )
+//
+// Returns the block at mouse position mx and my.
+// The blocks that can be reached lie between min and max.
+//
+// Each side is rendered with the X, Y and Z position of the
+// block in the RGB color values and the normal of the side is
+// stored in the color alpha value. In that way, all information
+// can be retrieved by simply reading the pixel the mouse is over.
+//
+// WARNING: This implies that the level can never be larger than
+// 254x254x254 blocks! (Value 255 is used for sky.)
+
+Renderer.prototype.pickAt = function( min, max, mx, my )
+{
+	var gl = this.gl;
+	var world = this.world;
+	
+	// Create framebuffer for picking render
+	var fbo = gl.createFramebuffer();
+	gl.bindFramebuffer( gl.FRAMEBUFFER, fbo );
+	
+	var bt = gl.createTexture();
+	gl.bindTexture( gl.TEXTURE_2D, bt );
+	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, null );
+	
+	var renderbuffer = gl.createRenderbuffer();
+	gl.bindRenderbuffer( gl.RENDERBUFFER, renderbuffer );
+	gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 512, 512 );
+	
+	gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, bt, 0 );
+	gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer );
+	
+	// Build buffer with block pick candidates
+	var vertices = [];
+	
+	for ( var x = min.x; x <= max.x; x++ ) {
+		for ( var y = min.y; y <= max.y; y++ ) {
+			for ( var z = min.z; z <= max.z; z++ ) {
+				if ( world.getBlock( x, y, z ) != BLOCK.AIR )
+					BLOCK.pushPickingVertices( vertices, x, y, z );
+			}
+		}
+	}
+	
+	var buffer = gl.createBuffer();
+	buffer.vertices = vertices.length / 9;
+	gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.DYNAMIC_DRAW );
+	
+	// Draw buffer
+	gl.bindTexture( gl.TEXTURE_2D, this.texWhite );
+	
+	gl.viewport( 0, 0, 512, 512 );
+	gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+	
+	this.drawBuffer( buffer );
+	
+	// Read pixel
+	var buffer = new Uint8Array( 4 );
+	gl.readPixels( mx/gl.viewportWidth*512, (1-my/gl.viewportHeight)*512, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, buffer );
+	
+	// Reset states
+	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
+	gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+	gl.clearColor( 0.62, 0.81, 1.0, 1.0 );
+	
+	// Build result
+	if ( buffer[0] != 255 )
+	{
+		var normal;
+		if ( buffer[3] == 1 ) normal = new Vector( 0, 0, 1 );
+		else if ( buffer[3] == 2 ) normal = new Vector( 0, 0, -1 );
+		else if ( buffer[3] == 3 ) normal = new Vector( 0, -1, 0 );
+		else if ( buffer[3] == 4 ) normal = new Vector( 0, 1, 0 );
+		else if ( buffer[3] == 5 ) normal = new Vector( -1, 0, 0 );
+		else if ( buffer[3] == 6 ) normal = new Vector( 1, 0, 0 );
+		
+		return {
+			x: buffer[0],
+			y: buffer[1],
+			z: buffer[2],
+			n: normal
+		}
+	} else {
+		return false;
 	}
 }
 

@@ -88,16 +88,3 @@ function rectRectCollide( r1, r2 )
 	if ( r2.x1 > r1.x1 && r2.x1 < r1.x2 && r2.y2 > r1.y1 && r2.y2 < r1.y2 ) return true;
 	return false;
 }
-
-// linePlaneIntersect( line, plane )
-//
-// Checks if a line and a plane intersect.
-// line { start: Vector( x, y, z ), dir: Vector( x, y, z ) }
-// plane { p: Vector( x, y, z ), normal: Vector( x, y, z ) }
-
-function linePlaneIntersect( line, plane )
-{
-	var u = plane.normal.dot( plane.p.sub( line.start ) ) / plane.normal.dot( line.dir );
-	if ( u < 0 ) return false;
-	return line.start.add( line.dir.mul( u ) );
-}
