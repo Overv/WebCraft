@@ -176,29 +176,35 @@ Renderer.prototype.pickAt = function( min, max, mx, my )
 	this.drawBuffer( buffer );
 	
 	// Read pixel
-	var buffer = new Uint8Array( 4 );
-	gl.readPixels( mx/gl.viewportWidth*512, (1-my/gl.viewportHeight)*512, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, buffer );
+	var pixel = new Uint8Array( 4 );
+	gl.readPixels( mx/gl.viewportWidth*512, (1-my/gl.viewportHeight)*512, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel );
 	
 	// Reset states
 	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
 	gl.bindFramebuffer( gl.FRAMEBUFFER, null );
 	gl.clearColor( 0.62, 0.81, 1.0, 1.0 );
 	
+	// Clean up
+	gl.deleteBuffer( buffer );
+	gl.deleteRenderbuffer( renderbuffer );
+	gl.deleteTexture( bt );
+	gl.deleteFramebuffer( fbo );
+	
 	// Build result
-	if ( buffer[0] != 255 )
+	if ( pixel[0] != 255 )
 	{
 		var normal;
-		if ( buffer[3] == 1 ) normal = new Vector( 0, 0, 1 );
-		else if ( buffer[3] == 2 ) normal = new Vector( 0, 0, -1 );
-		else if ( buffer[3] == 3 ) normal = new Vector( 0, -1, 0 );
-		else if ( buffer[3] == 4 ) normal = new Vector( 0, 1, 0 );
-		else if ( buffer[3] == 5 ) normal = new Vector( -1, 0, 0 );
-		else if ( buffer[3] == 6 ) normal = new Vector( 1, 0, 0 );
+		if ( pixel[3] == 1 ) normal = new Vector( 0, 0, 1 );
+		else if ( pixel[3] == 2 ) normal = new Vector( 0, 0, -1 );
+		else if ( pixel[3] == 3 ) normal = new Vector( 0, -1, 0 );
+		else if ( pixel[3] == 4 ) normal = new Vector( 0, 1, 0 );
+		else if ( pixel[3] == 5 ) normal = new Vector( -1, 0, 0 );
+		else if ( pixel[3] == 6 ) normal = new Vector( 1, 0, 0 );
 		
 		return {
-			x: buffer[0],
-			y: buffer[1],
-			z: buffer[2],
+			x: pixel[0],
+			y: pixel[1],
+			z: pixel[2],
 			n: normal
 		}
 	} else {
