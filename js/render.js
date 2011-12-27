@@ -326,7 +326,13 @@ Renderer.prototype.onBlockChanged = function( x, y, z )
 	{
 		// Neighbouring chunks are updated as well if the block is on a chunk border
 		// Also, all chunks below the block are updated because of lighting
-		if ( x >= chunks[i].start[0] - 1 && x <= chunks[i].end[0] && y >= chunks[i].start[1] - 1 && y <= chunks[i].end[1] && z >= chunks[i].start[2] )
+		if ( x >= chunks[i].start[0] && x < chunks[i].end[0] && y >= chunks[i].start[1] && y < chunks[i].end[1] && z >= chunks[i].start[2] && z < chunks[i].end[2] )
+			chunks[i].dirty = true;
+		else if ( x >= chunks[i].start[0] && x < chunks[i].end[0] && y >= chunks[i].start[1] && y < chunks[i].end[1] && ( z >= chunks[i].end[2] || z == chunks[i].start[2] - 1 ) )
+			chunks[i].dirty = true;
+		else if ( x >= chunks[i].start[0] && x < chunks[i].end[0] && z >= chunks[i].start[2] && z < chunks[i].end[2] && ( y == chunks[i].end[1] || y == chunks[i].start[1] - 1 ) )
+			chunks[i].dirty = true;
+		else if ( y >= chunks[i].start[1] && y < chunks[i].end[1] && z >= chunks[i].start[2] && z < chunks[i].end[2] && ( x == chunks[i].end[0] || x == chunks[i].start[0] - 1 ) )
 			chunks[i].dirty = true;
 	}
 }
