@@ -34,6 +34,7 @@ Client.prototype.connect = function( uri, nickname )
 	socket.on( "world", function( data ) { s.onWorld( data ); } );
 	socket.on( "spawn", function( data ) { s.onSpawn( data ); } );
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( data ); } );
+	socket.on( "msg", function( data ) { s.onMessage( data ); } );
 }
 
 // setBlock( x, y, z, mat )
@@ -47,6 +48,17 @@ Client.prototype.setBlock = function( x, y, z, mat )
 		y: y,
 		z: z,
 		mat: mat.id
+	} );
+}
+
+// sendMessage( msg )
+//
+// Send a chat message.
+
+Client.prototype.sendMessage = function( msg )
+{
+	this.socket.emit( "chat", {
+		msg: msg
 	} );
 }
 
@@ -108,6 +120,19 @@ Client.prototype.onBlockUpdate = function( data )
 	this.world.setBlock( data.x, data.y, data.z, material );
 }
 
+// onMessage( data )
+//
+// Called when a message is received.
+
+Client.prototype.onMessage = function( data )
+{
+	if ( data.type == "chat" ) {
+		if ( this.eventHandlers["chat"] ) this.eventHandlers.chat( data.user, data.msg );
+	} else if ( data.type == "generic" ) {
+		if ( this.eventHandlers["message"] ) this.eventHandlers.message( data.msg );
+	}
+}
+
 // ==========================================
 // Server
 // ==========================================
@@ -125,6 +150,8 @@ function Server( socketio )
 	io.set( "log level", 1 );
 	io.set( "reconnect", false );
 	io.sockets.on( "connection", function( socket ) { s.onConnection( socket ); } );
+	
+	this.eventHandlers = {};
 }
 
 // setWorld( world )
@@ -145,6 +172,41 @@ Server.prototype.setLogger = function( fn )
 	this.log = fn;
 }
 
+// on( event, callback )
+//
+// Hooks an event.
+
+Server.prototype.on = function( event, callback )
+{
+	this.eventHandlers[event] = callback;
+}
+
+// sendMessage( msg[, socket] )
+//
+// Send a generic message to a certain client or everyone.
+
+Server.prototype.sendMessage = function( msg, socket )
+{
+	var obj = socket ? socket : this.io.sockets;
+	obj.emit( "msg", {
+		type: "generic",
+		msg: msg
+	} );
+}
+
+// broadcastMessage( msg, socket )
+//
+// Send a generic message to everyone except for the
+// specified client.
+
+Server.prototype.broadcastMessage = function( msg, socket )
+{
+	socket.broadcast.emit( "msg", {
+		type: "generic",
+		msg: msg
+	} );
+}
+
 // onConnection( socket )
 //
 // Called when a new client has connected.
@@ -157,6 +219,7 @@ Server.prototype.onConnection = function( socket )
 	var s = this;
 	socket.on( "nickname", function( data ) { s.onNickname( socket, data ); } );
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( socket, data ); } );
+	socket.on( "chat", function( data ) { s.onChatMessage( socket, data ); } );
 	socket.on( "disconnect", function() { s.onDisconnect( socket ); } );
 }
 
@@ -169,6 +232,8 @@ Server.prototype.onNickname = function( socket, data )
 	if ( data.nickname.length == 0 || data.nickname.length > 15 ) return false;
 	
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " is now known as " + data.nickname + "." );
+	
+	if ( this.eventHandlers["join"] ) this.eventHandlers.join( socket, data.nickname );
 	
 	// Associate nickname with socket
 	socket.set( "nickname", data.nickname );
@@ -223,6 +288,32 @@ Server.prototype.onBlockUpdate = function( socket, data )
 	} );
 }
 
+// onChatMessage( socket, data )
+//
+// Called when a client sends a chat message.
+
+Server.prototype.onChatMessage = function( socket, data )
+{
+	if ( typeof( data.msg ) != "string" || data.msg.trim().length == 0 || data.msg.length > 100 ) return false;
+	var msg = data.msg.trim();
+	
+	// Check if the user has authenticated themselves before allowing them to send messages
+	var s = this;
+	socket.get( "nickname", function( err, name )
+	{
+		if ( name != null  )
+		{
+			if ( s.log ) s.log( "<" + name + "> " + msg );
+			
+			s.io.sockets.emit( "msg", {
+				type: "chat",
+				user: name,
+				msg: msg
+			} );
+		}
+	} );
+}
+
 // onDisconnect( socket, data )
 //
 // Called when a client has disconnected.
@@ -230,6 +321,15 @@ Server.prototype.onBlockUpdate = function( socket, data )
 Server.prototype.onDisconnect = function( socket )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " has disconnected." );
+	
+	if ( this.eventHandlers["leave"] )
+	{
+		var s = this;
+		socket.get( "nickname", function( err, name )
+		{
+			s.eventHandlers.leave( name );
+		} );
+	}
 }
 
 // Export to node.js

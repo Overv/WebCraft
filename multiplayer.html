@@ -39,6 +39,12 @@
 			<tr></tr>
 		</table>
 		
+		<!-- Chatbox -->
+		<div id="chatbox" style="visibility: hidden">
+			<span id="chatbox_text"></span>
+		</div>
+		<input id="chatbox_entry" type="text" maxlength="100" spellcheck="false" onkeypress="onChatEnter( this, event )" style="visibility: hidden" />
+		
 		<!-- Nickname box -->
 		<div id="nickname">
 			<span>Nickname:</span><br />
@@ -56,6 +62,9 @@
 			var page = {};
 			page.renderSurface = document.getElementById( "renderSurface" );
 			page.materialSelector = document.getElementById( "materialSelector" );
+			page.chatbox = document.getElementById( "chatbox" );
+			page.chatboxText = document.getElementById( "chatbox_text" );
+			page.chatboxEntry= document.getElementById( "chatbox_entry" );
 			page.nickname = document.getElementById( "nickname" );
 			page.nicknameInput = document.getElementById( "nickname_input" );
 			page.joinInfo = document.getElementById( "joininfo" );
@@ -73,9 +82,27 @@
 				var nickname = nicknameInput.value.trim();
 				
 				if ( keyEvent.keyCode != 13 ) return;
-				if ( nicknameInput.value.trim().length == 0 ) return;
+				if ( nickname.length == 0 ) return;
+				
+				nicknameInput.blur();
 				
 				joinGame( nickname );
+			}
+			
+			// Respond to chat message entry
+			function onChatEnter( chatInput, keyEvent )
+			{
+				
+				var msg = chatInput.value.trim();
+				
+				if ( keyEvent.keyCode != 13 ) return;
+				chatInput.blur();
+				page.chatbox.style.height = null;
+				if ( msg.length == 0 ) return;
+				
+				client.sendMessage( msg );
+				
+				chatInput.value = "";
 			}
 			
 			// Join game
@@ -125,10 +152,19 @@
 					player.setInputCanvas( "renderSurface" );
 					player.setMaterialSelector( "materialSelector" );
 					
+					// Handle open chat on 't' event
+					player.on( "openChat", function()
+					{
+						page.chatboxEntry.focus();
+						page.chatbox.style.height = ( render.gl.viewportHeight - 145 ) + "px";
+					} );
+					
 					// Open game view
 					page.joinInfo.style.visibility = "hidden";
 					page.renderSurface.style.visibility = null;
 					page.materialSelector.style.display = null;
+					page.chatbox.style.visibility = null;
+					page.chatboxEntry.style.visibility = null;
 					
 					// Render loop			
 					setInterval( function()
@@ -147,6 +183,17 @@
 						
 						while ( new Date().getTime() / 1000 - time < 0.016 );
 					}, 1 );
+				} );
+				
+				// Display chat messages
+				client.on( "chat", function( username, message )
+				{
+					page.chatboxText.innerHTML += "&lt;<span style=\"color: #0a0\">" + username + "</span>&gt " + message + "<br />";
+				} );
+				
+				client.on( "message", function( message )
+				{
+					page.chatboxText.innerHTML += "<span style=\"color: #ff8\">" + message + "</span><br />";
 				} );
 			}
 		</script>

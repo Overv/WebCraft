@@ -31,6 +31,7 @@ Player.prototype.setWorld = function( world )
 	this.falling = false;
 	this.keys = {};
 	this.buildMaterial = BLOCK.DIRT;
+	this.eventHandlers = {};
 }
 
 // setClient( client )
@@ -51,8 +52,8 @@ Player.prototype.setInputCanvas = function( id )
 	var canvas = this.canvas = document.getElementById( id );
 
 	var t = this;
-	document.onkeydown = function( e ) { t.onKeyEvent( e.keyCode, true ); return false; }
-	document.onkeyup = function( e ) { t.onKeyEvent( e.keyCode, false ); return false; }
+	document.onkeydown = function( e ) { if ( e.target.tagName != "INPUT" ) { t.onKeyEvent( e.keyCode, true ); return false; } }
+	document.onkeyup = function( e ) { if ( e.target.tagName != "INPUT" ) { t.onKeyEvent( e.keyCode, false ); return false; } }
 	canvas.onmousedown = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.DOWN, e.which == 3 ); return false; }
 	canvas.onmouseup = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.UP, e.which == 3 ); return false; }
 	canvas.onmousemove = function( e ) { t.onMouseEvent( e.clientX, e.clientY, MOUSE.MOVE, e.which == 3 ); return false; }
@@ -97,6 +98,15 @@ Player.prototype.setMaterialSelector = function( id )
 	}
 }
 
+// on( event, callback )
+//
+// Hook a player event.
+
+Player.prototype.on = function( event, callback )
+{
+	this.eventHandlers[event] = callback;
+}
+
 // onKeyEvent( keyCode, down )
 //
 // Hook for keyboard input.
@@ -106,6 +116,8 @@ Player.prototype.onKeyEvent = function( keyCode, down )
 	var key = String.fromCharCode( keyCode ).toLowerCase();
 	this.keys[key] = down;
 	this.keys[keyCode] = down;
+	
+	if ( !down && key == "t" && this.eventHandlers["openChat"] ) this.eventHandlers.openChat();
 }
 
 // onMouseEvent( x, y, type, rmb )

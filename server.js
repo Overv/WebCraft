@@ -43,6 +43,19 @@ server.setWorld( world );
 server.setLogger( log );
 log( "Waiting for clients..." );
 
+// Send a welcome message to new clients
+server.on( "join", function( client, username )
+{
+	server.sendMessage( "Welcome! Enjoy your stay, " + username + "!", client );
+	server.broadcastMessage( username + " joined the game.", client );
+} );
+
+// And let players know of a disconnecting user
+server.on( "leave", function( username )
+{
+	server.sendMessage( username + " left the game." );
+} );
+
 // Periodical saves
 setInterval( function()
 {
