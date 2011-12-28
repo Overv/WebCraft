@@ -7,7 +7,7 @@ both foolish and inefficient to use a 3D engine for rendering large amount of bl
 Screenshots
 ---------------------
 
-![Singleplayer structure](http://i40.tinypic.com/35an1o0.png)
+<a href="http://i.imgur.com/tDzki.png">![Singleplayer structure](http://i.imgur.com/2qBGy.png)</a>
 
 Structure
 ---------------------
