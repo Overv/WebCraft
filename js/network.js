@@ -163,6 +163,7 @@ function Server( socketio )
 	
 	this.eventHandlers = {};
 	this.activeNicknames = {};
+	this.activeAddresses = {};
 }
 
 // setWorld( world )
@@ -238,7 +239,17 @@ Server.prototype.kick = function( socket, msg )
 
 Server.prototype.onConnection = function( socket )
 {
-	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " connected to the server." );
+	var ip = socket.handshake.address.address;
+	
+	if ( this.log ) this.log( "Client " + ip + " connected to the server." );
+	
+	// Prevent people from blocking the server with multiple open clients
+	if ( this.activeAddresses[ip] )
+	{
+		this.kick( socket, "Multiple clients connecting from the same IP address!" );
+		return;
+	}
+	this.activeAddresses[ip] = true;
 	
 	// Hook events
 	var s = this;
@@ -360,6 +371,8 @@ Server.prototype.onChatMessage = function( socket, data )
 Server.prototype.onDisconnect = function( socket )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " disconnected." );
+	
+	this.activeAddresses[socket.handshake.address.address] = false;
 	
 	var s = this;
 	socket.get( "nickname", function( err, name )
