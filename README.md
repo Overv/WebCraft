@@ -16,6 +16,8 @@ Structure
 + *media/* - Contains the graphics resources.
 + *style/* - Contains stylesheets for the HTML front-ends.
 + *singleplayer.html* - The front-end for the singleplayer client.
++ *multiplayer.html* - The front-end for the multiplayer client.
++ *server.js* - The Node.js server code.
 
 Modules
 ---------------------
@@ -41,6 +43,10 @@ This is the module that takes care of visualizing the block structure in the wor
 **Player.js**
 
 Finally there is also the module that handles everything related to the player of the game. Surprising, perhaps, is that it also deals with the physics and collision of the player. Less surprising is that it manages the material selector and input and responds to it in an update function, just like the physics module.
+
+**Network.js**
+
+This module makes it easy to synchronize a world between a server and connected clients. It comes with both a *Client* and *Server* class to facilitate all of your networking needs.
 
 Typical game set-up
 ---------------------

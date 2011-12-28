@@ -30,9 +30,6 @@ function World( sx, sy, sz )
 	this.sx = sx;
 	this.sy = sy;
 	this.sz = sz;
-	
-	// Initialise player array
-	this.players = new Array();
 }
 
 // createFlatWorld()
@@ -48,6 +45,28 @@ World.prototype.createFlatWorld = function( height )
 		for ( var y = 0; y < this.sy; y++ )
 			for ( var z = 0; z < this.sz; z++ )
 				this.blocks[x][y][z] = z < height ? BLOCK.DIRT : BLOCK.AIR;
+}
+
+// createFromString( str )
+//
+// Creates a world from a string representation.
+// This is the opposite of toNetworkString().
+//
+// NOTE: The world must have already been created
+// with the appropriate size!
+
+World.prototype.createFromString = function( str )
+{
+	var i = 0;
+	
+	for ( var x = 0; x < this.sx; x++ ) {
+		for ( var y = 0; y < this.sy; y++ ) {
+			for ( var z = 0; z < this.sz; z++ ) {
+				this.blocks[x][y][z] = BLOCK.fromId( str.charCodeAt( i ) - 97 );
+				i = i + 1;
+			}
+		}
+	}
 }
 
 // getBlock( x, y, z )
@@ -68,4 +87,26 @@ World.prototype.setBlock = function( x, y, z, type )
 {
 	this.blocks[x][y][z] = type;
 	if ( this.renderer != null ) this.renderer.onBlockChanged( x, y, z );
+}
+
+// toNetworkString()
+//
+// Returns a string representation of this world.
+
+World.prototype.toNetworkString = function()
+{
+	var blockArray = [];
+	
+	for ( var x = 0; x < this.sx; x++ )
+		for ( var y = 0; y < this.sy; y++ )
+			for ( var z = 0; z < this.sz; z++ )
+				blockArray.push( String.fromCharCode( 97 + this.blocks[x][y][z].id ) );
+	
+	return blockArray.join( "" );
+}
+
+// Export to node.js
+if ( typeof( exports ) != "undefined" )
+{
+	exports.World = World;
 }

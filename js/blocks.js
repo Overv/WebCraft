@@ -17,12 +17,14 @@ BLOCK = {};
 
 // Air
 BLOCK.AIR = {
+	id: 0,
 	spawnable: false,
 	transparent: true
 };
 
 // Bedrock
 BLOCK.BEDROCK = {
+	id: 1,
 	spawnable: false,
 	transparent: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 1/16, 2/16, 2/16 ]; }
@@ -30,6 +32,7 @@ BLOCK.BEDROCK = {
 
 // Dirt
 BLOCK.DIRT = {
+	id: 2,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -48,6 +51,7 @@ BLOCK.DIRT = {
 
 // Wood
 BLOCK.WOOD = {
+	id: 3,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -64,6 +68,7 @@ BLOCK.WOOD = {
 
 // TNT
 BLOCK.TNT = {
+	id: 4,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -80,6 +85,7 @@ BLOCK.TNT = {
 
 // Bookcase
 BLOCK.BOOKCASE = {
+	id: 5,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -96,6 +102,7 @@ BLOCK.BOOKCASE = {
 
 // Lava
 BLOCK.LAVA = {
+	id: 6,
 	spawnable: false,
 	transparent: true,
 	selflit: true,
@@ -106,6 +113,7 @@ BLOCK.LAVA = {
 
 // Plank
 BLOCK.PLANK = {
+	id: 7,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -116,6 +124,7 @@ BLOCK.PLANK = {
 
 // Cobblestone
 BLOCK.COBBLESTONE = {
+	id: 8,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -126,6 +135,7 @@ BLOCK.COBBLESTONE = {
 
 // Concrete
 BLOCK.CONCRETE = {
+	id: 9,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -136,6 +146,7 @@ BLOCK.CONCRETE = {
 
 // Brick
 BLOCK.BRICK = {
+	id: 10,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -146,6 +157,7 @@ BLOCK.BRICK = {
 
 // Sand
 BLOCK.SAND = {
+	id: 11,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -156,6 +168,7 @@ BLOCK.SAND = {
 
 // Gravel
 BLOCK.GRAVEL = {
+	id: 12,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -166,6 +179,7 @@ BLOCK.GRAVEL = {
 
 // Iron
 BLOCK.IRON = {
+	id: 13,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -176,6 +190,7 @@ BLOCK.IRON = {
 
 // Gold
 BLOCK.GOLD = {
+	id: 14,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -186,6 +201,7 @@ BLOCK.GOLD = {
 
 // Diamond
 BLOCK.DIAMOND = {
+	id: 15,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -196,6 +212,7 @@ BLOCK.DIAMOND = {
 
 // Obsidian
 BLOCK.OBSIDIAN = {
+	id: 16,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -206,6 +223,7 @@ BLOCK.OBSIDIAN = {
 
 // Glass
 BLOCK.GLASS = {
+	id: 17,
 	spawnable: true,
 	transparent: true,
 	selflit: false,
@@ -216,6 +234,7 @@ BLOCK.GLASS = {
 
 // Sponge
 BLOCK.SPONGE = {
+	id: 18,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
@@ -223,6 +242,18 @@ BLOCK.SPONGE = {
 	fluid: false,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 0/16, 3/16, 1/16, 4/16 ]; }
 };
+
+// fromId( id )
+//
+// Returns a block structure for the given id.
+
+BLOCK.fromId = function( id )
+{
+	for ( var mat in BLOCK )
+		if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat].id == id )
+			return BLOCK[mat];
+	return false;
+}
 
 // pushVertices( vertices, world, lightmap, x, y, z )
 //
@@ -397,4 +428,10 @@ BLOCK.pushPickingVertices = function( vertices, x, y, z )
 		[ x + 1, y + 1, z + 1, 1, 1, color.r, color.g, color.b, 6/255 ],
 		[ x + 1, y, z + 1, 0, 0, color.r, color.g, color.b, 6/255 ]
 	);
+}
+
+// Export to node.js
+if ( typeof( exports ) != "undefined" )
+{
+	exports.BLOCK = BLOCK;
 }

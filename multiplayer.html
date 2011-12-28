@@ -1,0 +1,153 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>WebCraft</title>
+		
+		<!-- Character encoding -->
+		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+		
+		<!-- Stylesheet -->
+		<link href="style/main.css" rel="stylesheet" type="text/css">
+		
+		<!-- Modules -->
+		<script src="js/glMatrix-1.2.min.js" type="text/javascript"></script>
+		<script src="js/blocks.js" type="text/javascript"></script>
+		<script src="js/helpers.js" type="text/javascript"></script>
+		<script src="js/world.js" type="text/javascript"></script>
+		<script src="js/render.js" type="text/javascript"></script>
+		<script src="js/physics.js" type="text/javascript"></script>
+		<script src="js/player.js" type="text/javascript"></script>
+		<script src="js/network.js" type="text/javascript"></script>
+		
+		<!-- Load socket.io client module from Node.js server at port 3000 -->
+		<!-- WARNING: SUBSTITUTE HARDCODED ADDRESS WITH location.host WHEN COMMITTING!!!!! -->
+		<script type="text/javascript">			
+			var head = document.getElementsByTagName( "head" )[0];
+			var script = document.createElement( "script" );
+			script.type = "text/javascript";
+			script.src = "http://vps.overvprojects.nl:3000/socket.io/socket.io.js";
+			head.appendChild( script );
+		</script>
+	</head>
+	
+	<body oncontextmenu="return false">
+		<!-- Render surface -->
+		<canvas id="renderSurface" style="visiblity: hidden"></canvas>
+		
+		<!-- Material selection -->
+		<table id="materialSelector" style="visiblity: hidden">
+			<tr></tr>
+		</table>
+		
+		<!-- Nickname box -->
+		<div id="nickname">
+			<span>Nickname:</span><br />
+			<input id="nickname_input" type="text" maxlength="15" spellcheck="false" onkeypress="onNicknameEnter( this, event )" />
+		</div>
+		
+		<!-- Joining information -->
+		<div id="joininfo" style="visibility: hidden">
+			<span id="joininfo_text"></span>
+		</div>
+		
+		<!-- Main code -->
+		<script type="text/javascript">
+			// HTML elements
+			var page = {};
+			page.renderSurface = document.getElementById( "renderSurface" );
+			page.materialSelector = document.getElementById( "materialSelector" );
+			page.nickname = document.getElementById( "nickname" );
+			page.nicknameInput = document.getElementById( "nickname_input" );
+			page.joinInfo = document.getElementById( "joininfo" );
+			page.joinInfoText = document.getElementById( "joininfo_text" );
+			
+			// Game elements
+			var render, world, player
+			
+			// Focus on username field
+			page.nicknameInput.focus();
+			
+			// Respond to username entry
+			function onNicknameEnter( nicknameInput, keyEvent )
+			{
+				var nickname = nicknameInput.value.trim();
+				
+				if ( keyEvent.keyCode != 13 ) return;
+				if ( nicknameInput.value.trim().length == 0 ) return;
+				
+				joinGame( nickname );
+			}
+			
+			// Join game
+			function joinGame( nickname )
+			{
+				// Show join info
+				page.nickname.style.visibility = "hidden";
+				page.joinInfo.style.visibility = null;
+				page.joinInfoText.innerHTML = "Connecting to server...";
+				
+				// Create client and attempt connection
+				var client = new Client( io );
+				client.connect( "http://vps.overvprojects.nl:3000", nickname );
+				
+				// Update connection status
+				client.on( "connect", function()
+				{
+					page.joinInfoText.innerHTML = "Receiving world...";
+				} );
+				
+				// Initialise world
+				client.on( "world", function( w )
+				{
+					page.joinInfoText.innerHTML = "Building chunks...";
+					
+					// Set up world
+					world = w;
+					
+					// Set up renderer and build level chunks
+					render = new Renderer( "renderSurface" );
+					render.setWorld( world, 8 );
+					render.setPerspective( 60, 0.01, 200 );
+					
+					// Build all world chunks
+					render.buildChunks( 999 );
+					
+					page.joinInfoText.innerHTML = "Spawning...";
+				} );
+				
+				// Spawn local player
+				client.on( "spawn", function()
+				{
+					// Set up local player
+					player = new Player();
+					player.setWorld( world );
+					player.setInputCanvas( "renderSurface" );
+					player.setMaterialSelector( "materialSelector" );
+					
+					// Open game view
+					page.joinInfo.style.visibility = "hidden";
+					page.renderSurface.style.visibility = null;
+					page.materialSelector.style.visibility = null;
+					
+					// Render loop			
+					setInterval( function()
+					{
+						var time = new Date().getTime() / 1000.0;
+						
+						// Update local player
+						player.update();
+						
+						// Build a chunk
+						render.buildChunks( 1 );
+						
+						// Draw world
+						render.setCamera( player.getEyePos().toArray(), player.angles );
+						render.draw();
+						
+						while ( new Date().getTime() / 1000 - time < 0.016 );
+					}, 1 );
+				} );
+			}
+		</script>
+	</body>
+</html>

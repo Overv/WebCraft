@@ -88,3 +88,9 @@ function rectRectCollide( r1, r2 )
 	if ( r2.x1 > r1.x1 && r2.x1 < r1.x2 && r2.y2 > r1.y1 && r2.y2 < r1.y2 ) return true;
 	return false;
 }
+
+// Export to node.js
+if ( typeof( exports ) != "undefined" )
+{
+	exports.Vector = Vector;
+}

@@ -1,7 +1,20 @@
+/* Minecraft-like pixely font */
+@font-face {
+	font-family: minecraftia;
+	src: url( 'minecraftia.ttf' );
+}
+
 /* General page style */
 
 body {
 	height: 100%;
+	
+	font-family: minecraftia;
+	font-size: 16px;
+	
+	text-shadow: #3f3f3f 2px 2px 0px;
+	
+	background: url( '../media/background.png' );
 }
 
 /* Render surface */
@@ -43,4 +56,48 @@ body {
 
 #materialSelector td:hover {
 	opacity: 0.8;
+}
+
+/* Username input */
+
+#nickname {
+	position: absolute;
+	top: 40%;
+	left: 42%;
+	
+	width: 300px;
+	
+	cursor: default;
+	
+	color: #fff;
+}
+
+#nickname input {
+	width: 100%;
+	
+	background: none;
+	border: none;
+	border-bottom: 1px solid #888;
+	outline: none;
+	
+	color: white;
+	
+	font-family: minecraftia;
+	font-size: 24px;
+}
+
+/* Join information */
+
+#joininfo {
+	position: absolute;
+	top: 42%;
+	left: 38%;
+	
+	width: 400px;
+	
+	cursor: default;
+	
+	text-align: center;
+	color: #fff;
+	font-size: 24px;
 }
