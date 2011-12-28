@@ -252,7 +252,7 @@ BLOCK.fromId = function( id )
 	for ( var mat in BLOCK )
 		if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat].id == id )
 			return BLOCK[mat];
-	return false;
+	return null;
 }
 
 // pushVertices( vertices, world, lightmap, x, y, z )

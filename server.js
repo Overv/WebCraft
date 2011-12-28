@@ -26,7 +26,6 @@ global.BLOCK = modules.blocks.BLOCK;
 // Create new empty world
 var world = new modules.world.World( WORLD_SX, WORLD_SY, WORLD_SZ );
 world.createFlatWorld( WORLD_GROUNDHEIGHT );
-world.setBlock( 8, 8, 12, BLOCK.BRICK );
 
 // Start server
 var server = new modules.network.Server( modules.io );

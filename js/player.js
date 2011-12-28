@@ -33,6 +33,15 @@ Player.prototype.setWorld = function( world )
 	this.buildMaterial = BLOCK.DIRT;
 }
 
+// setClient( client )
+//
+// Assign the local player to a socket client.
+
+Player.prototype.setClient = function( client )
+{
+	this.client = client;
+}
+
 // setInputCanvas( id )
 //
 // Set the canvas the renderer uses for some input operations.
@@ -137,10 +146,12 @@ Player.prototype.doBlockAction = function( x, y, destroy )
 	
 	if ( block != false )
 	{
+		var obj = this.client ? this.client : this.world;
+		
 		if ( destroy )
-			this.world.setBlock( block.x, block.y, block.z, BLOCK.AIR );
+			obj.setBlock( block.x, block.y, block.z, BLOCK.AIR );
 		else
-			this.world.setBlock( block.x + block.n.x, block.y + block.n.y, block.z + block.n.z, this.buildMaterial );
+			obj.setBlock( block.x + block.n.x, block.y + block.n.y, block.z + block.n.z, this.buildMaterial );
 	}
 }
 

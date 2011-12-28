@@ -35,7 +35,7 @@
 		<canvas id="renderSurface" style="visiblity: hidden"></canvas>
 		
 		<!-- Material selection -->
-		<table id="materialSelector" style="visiblity: hidden">
+		<table id="materialSelector" style="display:none">
 			<tr></tr>
 		</table>
 		
@@ -62,7 +62,7 @@
 			page.joinInfoText = document.getElementById( "joininfo_text" );
 			
 			// Game elements
-			var render, world, player
+			var client, render, world, player
 			
 			// Focus on username field
 			page.nicknameInput.focus();
@@ -87,7 +87,7 @@
 				page.joinInfoText.innerHTML = "Connecting to server...";
 				
 				// Create client and attempt connection
-				var client = new Client( io );
+				client = new Client( io );
 				client.connect( "http://vps.overvprojects.nl:3000", nickname );
 				
 				// Update connection status
@@ -121,13 +121,14 @@
 					// Set up local player
 					player = new Player();
 					player.setWorld( world );
+					player.setClient( client );
 					player.setInputCanvas( "renderSurface" );
 					player.setMaterialSelector( "materialSelector" );
 					
 					// Open game view
 					page.joinInfo.style.visibility = "hidden";
 					page.renderSurface.style.visibility = null;
-					page.materialSelector.style.visibility = null;
+					page.materialSelector.style.display = null;
 					
 					// Render loop			
 					setInterval( function()
@@ -137,8 +138,8 @@
 						// Update local player
 						player.update();
 						
-						// Build a chunk
-						render.buildChunks( 1 );
+						// Build chunks
+						render.buildChunks( 5 );
 						
 						// Draw world
 						render.setCamera( player.getEyePos().toArray(), player.angles );

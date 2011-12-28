@@ -25,13 +25,29 @@ function Client( socketio )
 
 Client.prototype.connect = function( uri, nickname )
 {
-	var socket = this.socket = this.io.connect( uri );	
+	var socket = this.socket = this.io.connect( uri );
 	this.nickname = nickname;
 	
+	// Hook events
 	var s = this;
 	socket.on( "connect", function() { s.onConnection(); } );
 	socket.on( "world", function( data ) { s.onWorld( data ); } );
 	socket.on( "spawn", function( data ) { s.onSpawn( data ); } );
+	socket.on( "setblock", function( data ) { s.onBlockUpdate( data ); } );
+}
+
+// setBlock( x, y, z, mat )
+//
+// Called to do a networked block update.
+
+Client.prototype.setBlock = function( x, y, z, mat )
+{
+	this.socket.emit( "setblock", {
+		x: x,
+		y: y,
+		z: z,
+		mat: mat.id
+	} );
 }
 
 // on( event, callback )
@@ -79,6 +95,19 @@ Client.prototype.onSpawn = function( data )
 	if ( this.eventHandlers["spawn"] ) this.eventHandlers.spawn();
 }
 
+// onBlockUpdate( data )
+//
+// Called when a block update is received from the server.
+
+Client.prototype.onBlockUpdate = function( data )
+{
+	var material = BLOCK.fromId( data.mat );
+	
+	if ( this.eventHandlers["block"] ) this.eventHandlers.block( data.x, data.y, data.z, this.world.blocks[data.x][data.y][data.z], material );
+	
+	this.world.setBlock( data.x, data.y, data.z, material );
+}
+
 // ==========================================
 // Server
 // ==========================================
@@ -94,6 +123,7 @@ function Server( socketio )
 	var s = this;
 	
 	io.set( "log level", 1 );
+	io.set( "reconnect", false );
 	io.sockets.on( "connection", function( socket ) { s.onConnection( socket ); } );
 }
 
@@ -114,7 +144,8 @@ Server.prototype.onConnection = function( socket )
 {
 	// Hook events
 	var s = this;
-	socket.on( "nickname", function( data ) { s.onNickname( socket, data ) } );
+	socket.on( "nickname", function( data ) { s.onNickname( socket, data ); } );
+	socket.on( "setblock", function( data ) { s.onBlockUpdate( socket, data ); } );
 }
 
 // onNickname( socket, nickname )
@@ -123,6 +154,8 @@ Server.prototype.onConnection = function( socket )
 
 Server.prototype.onNickname = function( socket, data )
 {
+	if ( data.nickname.length == 0 || data.nickname.length > 15 ) return false;
+	
 	// Associate nickname with socket
 	socket.set( "nickname", data.nickname );
 	
@@ -141,6 +174,38 @@ Server.prototype.onNickname = function( socket, data )
 		x: world.spawnPoint.x,
 		y: world.spawnPoint.y,
 		z: world.spawnPoint.z
+	} );
+}
+
+// onBlockUpdate( socket, data )
+//
+// Called when a client wants to change a block.
+
+Server.prototype.onBlockUpdate = function( socket, data )
+{
+	var world = this.world;
+	
+	if ( typeof( data.x ) != "number" || typeof( data.y ) != "number" || typeof( data.z ) != "number" || typeof( data.mat ) != "number" ) return false;
+	if ( data.x < 0 || data.y < 0 || data.z < 0 || data.x >= world.sx || data.y >= world.sy || data.z >= world.sz ) return false;
+	
+	var material = BLOCK.fromId( data.mat );
+	if ( material == null || ( !material.spawnable && data.mat != 0 ) ) return false;
+	
+	// Check if the user has authenticated themselves before allowing them to set blocks
+	var s = this;
+	socket.get( "nickname", function( err, name )
+	{
+		if ( name != null  )
+		{
+			world.setBlock( data.x, data.y, data.z, material );
+			
+			s.io.sockets.emit( "setblock", {
+				x: data.x,
+				y: data.y,
+				z: data.z,
+				mat: data.mat
+			} );
+		}
 	} );
 }
 
