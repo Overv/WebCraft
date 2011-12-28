@@ -35,6 +35,7 @@ Client.prototype.connect = function( uri, nickname )
 	socket.on( "spawn", function( data ) { s.onSpawn( data ); } );
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( data ); } );
 	socket.on( "msg", function( data ) { s.onMessage( data ); } );
+	socket.on( "kick", function( data ) { s.onKick( data ); } );
 }
 
 // setBlock( x, y, z, mat )
@@ -133,6 +134,15 @@ Client.prototype.onMessage = function( data )
 	}
 }
 
+// onKick( data )
+//
+// Called when a kick message is received.
+
+Client.prototype.onKick = function( data )
+{
+	if ( this.eventHandlers["kick"] ) this.eventHandlers.kick( data.msg );
+}
+
 // ==========================================
 // Server
 // ==========================================
@@ -152,6 +162,7 @@ function Server( socketio )
 	io.sockets.on( "connection", function( socket ) { s.onConnection( socket ); } );
 	
 	this.eventHandlers = {};
+	this.activeNicknames = {};
 }
 
 // setWorld( world )
@@ -207,6 +218,20 @@ Server.prototype.broadcastMessage = function( msg, socket )
 	} );
 }
 
+// kick( socket, msg )
+//
+// Kick a client with the specified message.
+
+Server.prototype.kick = function( socket, msg )
+{
+	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " was kicked (" + msg + ")." );
+	
+	socket.emit( "kick", {
+		msg: msg
+	} );
+	socket.disconnect();
+}
+
 // onConnection( socket )
 //
 // Called when a new client has connected.
@@ -231,28 +256,42 @@ Server.prototype.onNickname = function( socket, data )
 {
 	if ( data.nickname.length == 0 || data.nickname.length > 15 ) return false;
 	
-	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " is now known as " + data.nickname + "." );
-	
-	if ( this.eventHandlers["join"] ) this.eventHandlers.join( socket, data.nickname );
-	
-	// Associate nickname with socket
-	socket.set( "nickname", data.nickname );
-	
-	// Send world to client
-	var world = this.world;
-	
-	socket.emit( "world", {
-		sx: world.sx,
-		sy: world.sy,
-		sz: world.sz,
-		blocks: world.toNetworkString()
-	} );
-	
-	// Spawn client
-	socket.emit( "spawn", {
-		x: world.spawnPoint.x,
-		y: world.spawnPoint.y,
-		z: world.spawnPoint.z
+	// Prevent people from changing their username
+	var s = this;
+	socket.get( "nickname", function( err, name )
+	{
+		if ( name == null )
+		{
+			if ( s.activeNicknames[data.nickname] )
+			{
+				s.kick( socket, "That username is already in use!" );
+				return;
+			}
+			
+			if ( s.log ) s.log( "Client " + socket.handshake.address.address + " is now known as " + data.nickname + "." );
+			if ( s.eventHandlers["join"] ) s.eventHandlers.join( socket, data.nickname );
+			s.activeNicknames[data.nickname] = true;
+			
+			// Associate nickname with socket
+			socket.set( "nickname", data.nickname );
+			
+			// Send world to client
+			var world = s.world;
+			
+			socket.emit( "world", {
+				sx: world.sx,
+				sy: world.sy,
+				sz: world.sz,
+				blocks: world.toNetworkString()
+			} );
+			
+			// Spawn client
+			socket.emit( "spawn", {
+				x: world.spawnPoint.x,
+				y: world.spawnPoint.y,
+				z: world.spawnPoint.z
+			} );
+		}
 	} );
 }
 
@@ -320,16 +359,16 @@ Server.prototype.onChatMessage = function( socket, data )
 
 Server.prototype.onDisconnect = function( socket )
 {
-	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " has disconnected." );
+	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " disconnected." );
 	
-	if ( this.eventHandlers["leave"] )
+	var s = this;
+	socket.get( "nickname", function( err, name )
 	{
-		var s = this;
-		socket.get( "nickname", function( err, name )
-		{
+		s.activeNicknames[name] = false;
+		
+		if ( s.eventHandlers["leave"] )
 			s.eventHandlers.leave( name );
-		} );
-	}
+	} );
 }
 
 // Export to node.js

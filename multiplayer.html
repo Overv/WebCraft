@@ -195,6 +195,12 @@
 				{
 					page.chatboxText.innerHTML += "<span style=\"color: #ff8\">" + message + "</span><br />";
 				} );
+				
+				// Handle kicking
+				client.on( "kick", function( message )
+				{
+					page.joinInfoText.innerHTML = "<span style=\"color: #f00; text-shadow: #a00 2px 2px 0px\">Kicked:</span> " + message;
+				} );
 			}
 		</script>
 	</body>
