@@ -136,16 +136,28 @@ Server.prototype.setWorld = function( world )
 	this.world = world;
 }
 
+// setLogger( fn )
+//
+// Assign a log function to output activity to.
+
+Server.prototype.setLogger = function( fn )
+{
+	this.log = fn;
+}
+
 // onConnection( socket )
 //
 // Called when a new client has connected.
 
 Server.prototype.onConnection = function( socket )
 {
+	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " connected to the server." );
+	
 	// Hook events
 	var s = this;
 	socket.on( "nickname", function( data ) { s.onNickname( socket, data ); } );
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( socket, data ); } );
+	socket.on( "disconnect", function() { s.onDisconnect( socket ); } );
 }
 
 // onNickname( socket, nickname )
@@ -155,6 +167,8 @@ Server.prototype.onConnection = function( socket )
 Server.prototype.onNickname = function( socket, data )
 {
 	if ( data.nickname.length == 0 || data.nickname.length > 15 ) return false;
+	
+	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " is now known as " + data.nickname + "." );
 	
 	// Associate nickname with socket
 	socket.set( "nickname", data.nickname );
@@ -207,6 +221,15 @@ Server.prototype.onBlockUpdate = function( socket, data )
 			} );
 		}
 	} );
+}
+
+// onDisconnect( socket, data )
+//
+// Called when a client has disconnected.
+
+Server.prototype.onDisconnect = function( socket )
+{
+	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " has disconnected." );
 }
 
 // Export to node.js
