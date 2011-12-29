@@ -17,6 +17,7 @@ function Client( socketio )
 {
 	this.io = socketio;
 	this.eventHandlers = {};
+	this.kicked = false;
 }
 
 // connect( uri, nickname )
@@ -25,12 +26,13 @@ function Client( socketio )
 
 Client.prototype.connect = function( uri, nickname )
 {
-	var socket = this.socket = this.io.connect( uri );
+	var socket = this.socket = this.io.connect( uri, { reconnect: false } );
 	this.nickname = nickname;
 	
 	// Hook events
 	var s = this;
 	socket.on( "connect", function() { s.onConnection(); } );
+	socket.on( "disconnect", function() { s.onDisconnection(); } );
 	socket.on( "world", function( data ) { s.onWorld( data ); } );
 	socket.on( "spawn", function( data ) { s.onSpawn( data ); } );
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( data ); } );
@@ -101,6 +103,15 @@ Client.prototype.onConnection = function()
 	if ( this.eventHandlers["connect"] ) this.eventHandlers.connect();
 	
 	this.socket.emit( "nickname", { nickname: this.nickname } );
+}
+
+// onDisconnection()
+//
+// Called when the client was disconnected.
+
+Client.prototype.onDisconnection = function()
+{
+	if ( this.eventHandlers["disconnect"] ) this.eventHandlers.disconnect( this.kicked );
 }
 
 // onWorld( data )
@@ -212,7 +223,6 @@ function Server( socketio )
 	var s = this;
 	
 	io.set( "log level", 1 );
-	io.set( "reconnect", false );
 	io.sockets.on( "connection", function( socket ) { s.onConnection( socket ); } );
 	
 	this.eventHandlers = {};
@@ -292,6 +302,7 @@ Server.prototype.kick = function( socket, msg )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " was kicked (" + msg + ")." );
 	
+	this.kicked = true;
 	socket.emit( "kick", {
 		msg: msg
 	} );
