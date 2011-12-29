@@ -63,6 +63,9 @@ function Renderer( id )
 	// Load shaders
 	this.loadShaders();
 	
+	// Load player model
+	this.loadPlayerModel();
+	
 	// Create projection and view matrices
 	var projMatrix = this.projMatrix = mat4.create();
 	var viewMatrix = this.viewMatrix = mat4.create();
@@ -130,85 +133,94 @@ Renderer.prototype.draw = function()
 				this.drawBuffer( chunks[i].buffer );
 		}
 	}
+	
+	// Draw players
+	var players = this.world.players;
+	
+	gl.bindTexture( gl.TEXTURE_2D, this.texPlayer );
+	
+	for ( var p in world.players )
+	{
+		var player = world.players[p];
+		
+		mat4.identity( this.modelMatrix );
+		mat4.translate( this.modelMatrix, [ player.x, player.y, player.z ] );
+		mat4.rotateZ( this.modelMatrix, Math.PI - player.yaw );
+		mat4.rotateX( this.modelMatrix, -player.pitch );
+		gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+		
+		this.drawBuffer( this.playerModel );
+	}
+	
+	mat4.identity( this.modelMatrix );
+	gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+	
+	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
 }
 
-// drawPlayer( pos )
+// loadPlayerModel()
 //
-// Test function for development of player rendering.
+// Loads the player model into a vertex buffer for rendering.
 
-Renderer.prototype.drawPlayer = function( pos )
+Renderer.prototype.loadPlayerModel = function()
 {
 	var gl = this.gl;
 	
 	// Player head
 	var vertices = [
 		// Top
-		0, 0, 0.5, 8/64, 0, 1, 1, 1, 1,
-		0.5, 0, 0.5, 16/64, 0, 1, 1, 1, 1,
-		0.5, 0.5, 0.5, 16/64, 8/32, 1, 1, 1, 1,
-		0.5, 0.5, 0.5, 16/64, 8/32, 1, 1, 1, 1,
-		0, 0.5, 0.5, 8/64, 8/32, 1, 1, 1, 1,
-		0, 0, 0.5, 8/64, 0, 1, 1, 1, 1,
+		-0.25, -0.25, 0.5, 8/64, 0, 1, 1, 1, 1,
+		0.25, -0.25, 0.5, 16/64, 0, 1, 1, 1, 1,
+		0.25, 0.25, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		0.25, 0.25, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0.5, 8/64, 0, 1, 1, 1, 1,
 		
 		// Bottom
-		0, 0, 0, 16/64, 0, 1, 1, 1, 1,
-		0, 0.5, 0, 16/64, 8/32, 1, 1, 1, 1,
-		0.5, 0.5, 0, 24/64, 8/32, 1, 1, 1, 1,
-		0.5, 0.5, 0, 24/64, 8/32, 1, 1, 1, 1,
-		0.5, 0, 0, 24/64, 0, 1, 1, 1, 1,
-		0, 0, 0, 16/64, 0, 1, 1, 1, 1,
+		-0.25, -0.25, 0, 16/64, 0, 1, 1, 1, 1,
+		-0.25, 0.25, 0, 16/64, 8/32, 1, 1, 1, 1,
+		0.25, 0.25, 0, 24/64, 8/32, 1, 1, 1, 1,
+		0.25, 0.25, 0, 24/64, 8/32, 1, 1, 1, 1,
+		0.25, -0.25, 0, 24/64, 0, 1, 1, 1, 1,
+		-0.25, -0.25, 0, 16/64, 0, 1, 1, 1, 1,
 		
 		// Front		
-		0, 0, 0.5, 8/64, 8/32, 1, 1, 1, 1,
-		0, 0, 0, 8/64, 16/32, 1, 1, 1, 1,
-		0.5, 0, 0, 16/64, 16/32, 1, 1, 1, 1,
-		0.5, 0, 0, 16/64, 16/32, 1, 1, 1, 1,
-		0.5, 0, 0.5, 16/64, 8/32, 1, 1, 1, 1,
-		0, 0, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0, 8/64, 16/32, 1, 1, 1, 1,
+		0.25, -0.25, 0, 16/64, 16/32, 1, 1, 1, 1,
+		0.25, -0.25, 0, 16/64, 16/32, 1, 1, 1, 1,
+		0.25, -0.25, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0.5, 8/64, 8/32, 1, 1, 1, 1,
 		
 		// Rear		
-		0, 0.5, 0.5, 24/64, 8/32, 1, 1, 1, 1,
-		0.5, 0.5, 0.5, 32/64, 8/32, 1, 1, 1, 1,
-		0.5, 0.5, 0, 32/64, 16/32, 1, 1, 1, 1,
-		0.5, 0.5, 0, 32/64, 16/32, 1, 1, 1, 1,
-		0, 0.5, 0, 24/64, 16/32, 1, 1, 1, 1,
-		0, 0.5, 0.5, 24/64, 8/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0.5, 24/64, 8/32, 1, 1, 1, 1,
+		0.25, 0.25, 0.5, 32/64, 8/32, 1, 1, 1, 1,
+		0.25, 0.25, 0, 32/64, 16/32, 1, 1, 1, 1,
+		0.25, 0.25, 0, 32/64, 16/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0, 24/64, 16/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0.5, 24/64, 8/32, 1, 1, 1, 1,
 		
 		// Left
-		0, 0, 0.5, 16/64, 8/32, 1, 1, 1, 1,
-		0, 0.5, 0.5, 24/64, 8/32, 1, 1, 1, 1,
-		0, 0.5, 0, 24/64, 16/32, 1, 1, 1, 1,
-		0, 0.5, 0, 24/64, 16/32, 1, 1, 1, 1,
-		0, 0, 0, 16/64, 16/32, 1, 1, 1, 1,
-		0, 0, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0.5, 24/64, 8/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0, 24/64, 16/32, 1, 1, 1, 1,
+		-0.25, 0.25, 0, 24/64, 16/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0, 16/64, 16/32, 1, 1, 1, 1,
+		-0.25, -0.25, 0.5, 16/64, 8/32, 1, 1, 1, 1,
 		
 		// Right
-		0.5, 0, 0.5, 0, 8/32, 1, 1, 1, 1,
-		0.5, 0, 0, 0, 16/32, 1, 1, 1, 1,
-		0.5, 0.5, 0, 8/64, 16/32, 1, 1, 1, 1,
-		0.5, 0.5, 0, 8/64, 16/32, 1, 1, 1, 1,
-		0.5, 0.5, 0.5, 8/64, 8/32, 1, 1, 1, 1,
-		0.5, 0, 0.5, 0, 8/32, 1, 1, 1, 1
+		0.25, -0.25, 0.5, 0, 8/32, 1, 1, 1, 1,
+		0.25, -0.25, 0, 0, 16/32, 1, 1, 1, 1,
+		0.25, 0.25, 0, 8/64, 16/32, 1, 1, 1, 1,
+		0.25, 0.25, 0, 8/64, 16/32, 1, 1, 1, 1,
+		0.25, 0.25, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		0.25, -0.25, 0.5, 0, 8/32, 1, 1, 1, 1
 	];
 	
-	var buffer = gl.createBuffer();
+	var buffer = this.playerModel = gl.createBuffer();
 	buffer.vertices = vertices.length / 9;
 	gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
 	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.DYNAMIC_DRAW );
-	
-	gl.bindTexture( gl.TEXTURE_2D, this.texPlayer );
-	
-	mat4.translate( this.modelMatrix, [ pos.x, pos.y, pos.z ] );
-	gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
-	
-	this.drawBuffer( buffer );
-	
-	mat4.identity( this.modelMatrix );
-	gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
-	
-	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
-	
-	gl.deleteBuffer( buffer );
 }
 
 // pickAt( min, max, mx, myy )

@@ -187,6 +187,8 @@ Client.prototype.onPlayerLeave = function( data )
 
 Client.prototype.onPlayerUpdate = function( data )
 {
+	if ( !this.world ) return;
+	
 	var pl = this.world.players[data.nick];
 	pl.x = data.x;
 	pl.y = data.y;
