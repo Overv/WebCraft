@@ -216,6 +216,8 @@ function Server( socketio )
 	this.eventHandlers = {};
 	this.activeNicknames = {};
 	this.activeAddresses = {};
+	
+	this.oneUserPerIp = true;
 }
 
 // setWorld( world )
@@ -234,6 +236,15 @@ Server.prototype.setWorld = function( world )
 Server.prototype.setLogger = function( fn )
 {
 	this.log = fn;
+}
+
+// setOneUserPerIp( enabled )
+//
+// Enable/disable the one user per ip rule.
+
+Server.prototype.setOneUserPerIp = function( enabled )
+{
+	this.oneUserPerIp = enabled;
 }
 
 // on( event, callback )
@@ -296,7 +307,7 @@ Server.prototype.onConnection = function( socket )
 	if ( this.log ) this.log( "Client " + ip + " connected to the server." );
 	
 	// Prevent people from blocking the server with multiple open clients
-	if ( this.activeAddresses[ip] )
+	if ( this.activeAddresses[ip] && this.oneUserPerIp )
 	{
 		this.kick( socket, "Multiple clients connecting from the same IP address!" );
 		return;
