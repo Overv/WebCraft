@@ -171,6 +171,7 @@ Client.prototype.onMessage = function( data )
 
 Client.prototype.onKick = function( data )
 {
+	this.kicked = true;
 	if ( this.eventHandlers["kick"] ) this.eventHandlers.kick( data.msg );
 }
 
@@ -212,12 +213,12 @@ Client.prototype.onPlayerUpdate = function( data )
 // Server
 // ==========================================
 
-// Constructor( socketio )
+// Constructor( socketio, slots )
 //
 // Creates a new server listening for clients using the specified
-// socket interface.
+// socket interface. Slots is an optional maximum amount of clients.
 
-function Server( socketio )
+function Server( socketio, slots )
 {
 	var io = this.io = socketio.listen( 3000 );
 	var s = this;
@@ -228,6 +229,9 @@ function Server( socketio )
 	this.eventHandlers = {};
 	this.activeNicknames = {};
 	this.activeAddresses = {};
+	
+	this.maxSlots = slots;
+	this.usedSlots = 0;
 	
 	this.oneUserPerIp = true;
 }
@@ -302,7 +306,6 @@ Server.prototype.kick = function( socket, msg )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " was kicked (" + msg + ")." );
 	
-	this.kicked = true;
 	socket.emit( "kick", {
 		msg: msg
 	} );
@@ -319,6 +322,12 @@ Server.prototype.onConnection = function( socket )
 	
 	if ( this.log ) this.log( "Client " + ip + " connected to the server." );
 	
+	// Check if a slot limit is active
+	if ( this.maxSlots != null && this.usedSlots == this.maxSlots ) {
+		this.kick( socket, "The server is full!" );
+		return;
+	}
+	
 	// Prevent people from blocking the server with multiple open clients
 	if ( this.activeAddresses[ip] && this.oneUserPerIp )
 	{
@@ -326,6 +335,7 @@ Server.prototype.onConnection = function( socket )
 		return;
 	}
 	this.activeAddresses[ip] = true;
+	this.usedSlots++;
 	
 	// Hook events
 	var s = this;
@@ -518,6 +528,7 @@ Server.prototype.onDisconnect = function( socket )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " disconnected." );
 	
+	this.usedSlots--;	
 	delete this.activeAddresses[socket.handshake.address.address];
 	
 	var s = this;

@@ -38,7 +38,7 @@ if ( world.loadFromFile( "world" ) ) {
 }
 
 // Start server
-var server = new modules.network.Server( modules.io );
+var server = new modules.network.Server( modules.io, 16 );
 server.setWorld( world );
 server.setLogger( log );
 server.setOneUserPerIp( false );
