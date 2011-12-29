@@ -444,6 +444,7 @@ Server.prototype.onBlockUpdate = function( socket, data )
 	
 	if ( typeof( data.x ) != "number" || typeof( data.y ) != "number" || typeof( data.z ) != "number" || typeof( data.mat ) != "number" ) return false;
 	if ( data.x < 0 || data.y < 0 || data.z < 0 || data.x >= world.sx || data.y >= world.sy || data.z >= world.sz ) return false;
+	if ( Math.sqrt( (data.x-world.spawnPoint.x)*(data.x-world.spawnPoint.x) + (data.y-world.spawnPoint.y)*(data.y-world.spawnPoint.y) + (data.z-world.spawnPoint.z)*(data.z-world.spawnPoint.z)  ) < 5 ) return false;
 	
 	var material = BLOCK.fromId( data.mat );
 	if ( material == null || ( !material.spawnable && data.mat != 0 ) ) return false;
