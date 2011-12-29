@@ -369,6 +369,21 @@ Server.prototype.onNickname = function( socket, data )
 				z: world.spawnPoint.z,
 			} );
 			
+			// Tell client about other players
+			for ( var p in s.world.players )
+			{
+				var pl = s.world.players[p];
+				
+				socket.emit( "join", {
+					nick: p,
+					x: pl.x,
+					y: pl.y,
+					z: pl.z,
+					pitch: pl.pitch,
+					yaw: pl.yaw
+				} );
+			}
+			
 			// Inform other players
 			socket.broadcast.emit( "join", {
 				nick: data.nickname,
@@ -379,6 +394,7 @@ Server.prototype.onNickname = function( socket, data )
 				yaw: 0
 			} );
 			
+			// Add player to world
 			world.players[data.nickname] = {
 				x: world.spawnPoint.x,
 				y: world.spawnPoint.y,
