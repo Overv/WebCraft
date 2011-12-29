@@ -365,18 +365,20 @@ Server.prototype.onNickname = function( socket, data )
 	{
 		if ( name == null )
 		{
-			if ( s.activeNicknames[data.nickname] )
+			var nickname = s.sanitiseInput( data.nickname );
+			
+			if ( s.activeNicknames[nickname] )
 			{
 				s.kick( socket, "That username is already in use!" );
 				return;
 			}
 			
-			if ( s.log ) s.log( "Client " + socket.handshake.address.address + " is now known as " + data.nickname + "." );
-			if ( s.eventHandlers["join"] ) s.eventHandlers.join( socket, data.nickname );
+			if ( s.log ) s.log( "Client " + socket.handshake.address.address + " is now known as " + nickname + "." );
+			if ( s.eventHandlers["join"] ) s.eventHandlers.join( socket, nickname );
 			s.activeNicknames[data.nickname] = true;
 			
 			// Associate nickname with socket
-			socket.set( "nickname", data.nickname );
+			socket.set( "nickname", nickname );
 			
 			// Send world to client
 			var world = s.world;
@@ -412,7 +414,7 @@ Server.prototype.onNickname = function( socket, data )
 			
 			// Inform other players
 			socket.broadcast.emit( "join", {
-				nick: data.nickname,
+				nick: nickname,
 				x: world.spawnPoint.x,
 				y: world.spawnPoint.y,
 				z: world.spawnPoint.z,
@@ -421,7 +423,7 @@ Server.prototype.onNickname = function( socket, data )
 			} );
 			
 			// Add player to world
-			world.players[data.nickname] = {
+			world.players[nickname] = {
 				x: world.spawnPoint.x,
 				y: world.spawnPoint.y,
 				z: world.spawnPoint.z,
@@ -471,7 +473,7 @@ Server.prototype.onBlockUpdate = function( socket, data )
 Server.prototype.onChatMessage = function( socket, data )
 {
 	if ( typeof( data.msg ) != "string" || data.msg.trim().length == 0 || data.msg.length > 100 ) return false;
-	var msg = data.msg.trim();
+	var msg = this.sanitiseInput( data.msg );
 	
 	// Check if the user has authenticated themselves before allowing them to send messages
 	var s = this;
@@ -550,6 +552,15 @@ Server.prototype.onDisconnect = function( socket )
 		if ( s.eventHandlers["leave"] )
 			s.eventHandlers.leave( name );
 	} );
+}
+
+// sanitiseInput( str )
+//
+// Prevents XSS exploits and other bad things.
+
+Server.prototype.sanitiseInput = function( str )
+{
+	return str.trim().replace( /</g, "&lt;" ).replace( />/g, "&gt;" ).replace( /\\/g, "&quot" );
 }
 
 // Export to node.js
