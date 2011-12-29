@@ -30,6 +30,8 @@ function World( sx, sy, sz )
 	this.sx = sx;
 	this.sy = sy;
 	this.sz = sz;
+	
+	this.players = {};
 }
 
 // createFlatWorld()

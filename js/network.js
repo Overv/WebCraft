@@ -36,6 +36,9 @@ Client.prototype.connect = function( uri, nickname )
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( data ); } );
 	socket.on( "msg", function( data ) { s.onMessage( data ); } );
 	socket.on( "kick", function( data ) { s.onKick( data ); } );
+	socket.on( "join", function( data ) { s.onPlayerJoin( data ); } );
+	socket.on( "leave", function( data ) { s.onPlayerLeave( data ); } );
+	socket.on( "player", function( data ) { s.onPlayerUpdate( data ); } );
 }
 
 // setBlock( x, y, z, mat )
@@ -60,6 +63,23 @@ Client.prototype.sendMessage = function( msg )
 {
 	this.socket.emit( "chat", {
 		msg: msg
+	} );
+}
+
+// updatePlayer()
+//
+// Sends the current player position and orientation to the server.
+
+Client.prototype.updatePlayer = function()
+{
+	var player = this.world.localPlayer;
+	
+	this.socket.emit( "player", {
+		x: player.pos.x,
+		y: player.pos.y,
+		z: player.pos.z,
+		pitch: player.angles[0],
+		yaw: player.angles[1]
 	} );
 }
 
@@ -141,6 +161,38 @@ Client.prototype.onMessage = function( data )
 Client.prototype.onKick = function( data )
 {
 	if ( this.eventHandlers["kick"] ) this.eventHandlers.kick( data.msg );
+}
+
+// onPlayerJoin( data )
+//
+// Called when a new player joins the game.
+
+Client.prototype.onPlayerJoin = function( data )
+{
+	this.world.players[data.nick] = data;
+}
+
+// onPlayerLeave( data )
+//
+// Called when a player has left the game.
+
+Client.prototype.onPlayerLeave = function( data )
+{
+	delete this.world.players[data.nick];
+}
+
+// onPlayerUpdate( data )
+//
+// Called when the server has sent updated player info.
+
+Client.prototype.onPlayerUpdate = function( data )
+{
+	var pl = this.world.players[data.nick];
+	pl.x = data.x;
+	pl.y = data.y;
+	pl.z = data.z;
+	pl.pitch = data.pitch;
+	pl.yaw = data.yaw;
 }
 
 // ==========================================
@@ -256,6 +308,7 @@ Server.prototype.onConnection = function( socket )
 	socket.on( "nickname", function( data ) { s.onNickname( socket, data ); } );
 	socket.on( "setblock", function( data ) { s.onBlockUpdate( socket, data ); } );
 	socket.on( "chat", function( data ) { s.onChatMessage( socket, data ); } );
+	socket.on( "player", function( data ) { s.onPlayerUpdate( socket, data ); } );
 	socket.on( "disconnect", function() { s.onDisconnect( socket ); } );
 }
 
@@ -300,8 +353,26 @@ Server.prototype.onNickname = function( socket, data )
 			socket.emit( "spawn", {
 				x: world.spawnPoint.x,
 				y: world.spawnPoint.y,
-				z: world.spawnPoint.z
+				z: world.spawnPoint.z,
 			} );
+			
+			// Inform other players
+			socket.broadcast.emit( "join", {
+				nick: data.nickname,
+				x: world.spawnPoint.x,
+				y: world.spawnPoint.y,
+				z: world.spawnPoint.z,
+				pitch: 0,
+				yaw: 0
+			} );
+			
+			world.players[data.nickname] = {
+				x: world.spawnPoint.x,
+				y: world.spawnPoint.y,
+				z: world.spawnPoint.z,
+				pitch: 0,
+				yaw: 0
+			};
 		}
 	} );
 }
@@ -364,6 +435,41 @@ Server.prototype.onChatMessage = function( socket, data )
 	} );
 }
 
+// onPlayerUpdate( socket, data )
+//
+// Called when a client sends a position/orientation update.
+
+Server.prototype.onPlayerUpdate = function( socket, data )
+{
+	if ( typeof( data.x ) != "number" || typeof( data.y ) != "number" || typeof( data.z ) != "number" ) return false;
+	if ( typeof( data.pitch ) != "number" || typeof( data.yaw ) != "number" ) return false;
+	
+	// Check if the user has authenticated themselves before allowing them to send updates
+	var s = this;
+	socket.get( "nickname", function( err, name )
+	{
+		if ( name != null  )
+		{
+			var pl = s.world.players[name];
+			pl.x = data.x;
+			pl.y = data.y;
+			pl.z = data.z;
+			pl.pitch = data.pitch;
+			pl.yaw = data.yaw;
+			
+			// Forward update to other players
+			socket.volatile.broadcast.emit( "player", {
+				nick: name,
+				x: pl.x,
+				y: pl.y,
+				z: pl.z,
+				pitch: pl.pitch,
+				yaw: pl.yaw
+			} );
+		}
+	} );
+}
+
 // onDisconnect( socket, data )
 //
 // Called when a client has disconnected.
@@ -372,12 +478,18 @@ Server.prototype.onDisconnect = function( socket )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " disconnected." );
 	
-	this.activeAddresses[socket.handshake.address.address] = false;
+	delete this.activeAddresses[socket.handshake.address.address];
 	
 	var s = this;
 	socket.get( "nickname", function( err, name )
 	{
-		s.activeNicknames[name] = false;
+		delete s.activeNicknames[name];
+		delete s.world.players[name];
+		
+		// Inform other players
+		socket.broadcast.emit( "leave", {
+			nick: name
+		} );
 		
 		if ( s.eventHandlers["leave"] )
 			s.eventHandlers.leave( name );

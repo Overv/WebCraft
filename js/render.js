@@ -9,13 +9,14 @@
 var vertexSource =
 	"uniform mat4 uProjMatrix;"+
 	"uniform mat4 uViewMatrix;"+
+	"uniform mat4 uModelMatrix;"+
 	"attribute vec3 aPos;"+
 	"attribute vec4 aColor;"+
 	"attribute vec2 aTexCoord;"+
 	"varying vec4 vColor;"+
 	"varying vec2 vTexCoord;"+
 	"void main() {"+
-	"	gl_Position = uProjMatrix * uViewMatrix * vec4( aPos, 1.0 );"+
+	"	gl_Position = uProjMatrix * uViewMatrix * ( uModelMatrix * vec4( aPos, 1.0 ) );"+
 	"	vColor = aColor;"+
 	"	vTexCoord = aTexCoord;"+
 	"}";
@@ -66,27 +67,44 @@ function Renderer( id )
 	var projMatrix = this.projMatrix = mat4.create();
 	var viewMatrix = this.viewMatrix = mat4.create();
 	
+	// Create dummy model matrix
+	var modelMatrix = this.modelMatrix = mat4.create();
+	mat4.identity( modelMatrix );
+	gl.uniformMatrix4fv( this.uModelMat, false, modelMatrix );
+	
 	// Create 1px white texture for pure vertex color operations (e.g. picking)
-	var texture = this.texWhite = gl.createTexture();
+	var whiteTexture = this.texWhite = gl.createTexture();
 	gl.activeTexture( gl.TEXTURE0 );
-	gl.bindTexture( gl.TEXTURE_2D, texture );
+	gl.bindTexture( gl.TEXTURE_2D, whiteTexture );
 	var white = new Uint8Array( [ 255, 255, 255, 255 ] );
 	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, white );
 	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 	gl.uniform1i(  this.uSampler, 0 );
 	
-	// Load terrain texture
-	var texture = this.texTerrain = gl.createTexture();
-	texture.image = new Image();
-	texture.image.onload = function()
+	// Load player texture
+	var playerTexture = this.texPlayer = gl.createTexture();
+	playerTexture.image = new Image();
+	playerTexture.image.onload = function()
 	{
-		gl.bindTexture( gl.TEXTURE_2D, texture );
-		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image );
+		gl.bindTexture( gl.TEXTURE_2D, playerTexture );
+		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, playerTexture.image );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 	};
-	texture.image.src = "media/terrain.png";
+	playerTexture.image.src = "media/player.png";
+	
+	// Load terrain texture
+	var terrainTexture = this.texTerrain = gl.createTexture();
+	terrainTexture.image = new Image();
+	terrainTexture.image.onload = function()
+	{
+		gl.bindTexture( gl.TEXTURE_2D, terrainTexture );
+		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, terrainTexture.image );
+		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+	};
+	terrainTexture.image.src = "media/terrain.png";
 }
 
 // draw()
@@ -112,6 +130,85 @@ Renderer.prototype.draw = function()
 				this.drawBuffer( chunks[i].buffer );
 		}
 	}
+}
+
+// drawPlayer( pos )
+//
+// Test function for development of player rendering.
+
+Renderer.prototype.drawPlayer = function( pos )
+{
+	var gl = this.gl;
+	
+	// Player head
+	var vertices = [
+		// Top
+		0, 0, 0.5, 8/64, 0, 1, 1, 1, 1,
+		0.5, 0, 0.5, 16/64, 0, 1, 1, 1, 1,
+		0.5, 0.5, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		0.5, 0.5, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		0, 0.5, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		0, 0, 0.5, 8/64, 0, 1, 1, 1, 1,
+		
+		// Bottom
+		0, 0, 0, 16/64, 0, 1, 1, 1, 1,
+		0, 0.5, 0, 16/64, 8/32, 1, 1, 1, 1,
+		0.5, 0.5, 0, 24/64, 8/32, 1, 1, 1, 1,
+		0.5, 0.5, 0, 24/64, 8/32, 1, 1, 1, 1,
+		0.5, 0, 0, 24/64, 0, 1, 1, 1, 1,
+		0, 0, 0, 16/64, 0, 1, 1, 1, 1,
+		
+		// Front		
+		0, 0, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		0, 0, 0, 8/64, 16/32, 1, 1, 1, 1,
+		0.5, 0, 0, 16/64, 16/32, 1, 1, 1, 1,
+		0.5, 0, 0, 16/64, 16/32, 1, 1, 1, 1,
+		0.5, 0, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		0, 0, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		
+		// Rear		
+		0, 0.5, 0.5, 24/64, 8/32, 1, 1, 1, 1,
+		0.5, 0.5, 0.5, 32/64, 8/32, 1, 1, 1, 1,
+		0.5, 0.5, 0, 32/64, 16/32, 1, 1, 1, 1,
+		0.5, 0.5, 0, 32/64, 16/32, 1, 1, 1, 1,
+		0, 0.5, 0, 24/64, 16/32, 1, 1, 1, 1,
+		0, 0.5, 0.5, 24/64, 8/32, 1, 1, 1, 1,
+		
+		// Left
+		0, 0, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		0, 0.5, 0.5, 24/64, 8/32, 1, 1, 1, 1,
+		0, 0.5, 0, 24/64, 16/32, 1, 1, 1, 1,
+		0, 0.5, 0, 24/64, 16/32, 1, 1, 1, 1,
+		0, 0, 0, 16/64, 16/32, 1, 1, 1, 1,
+		0, 0, 0.5, 16/64, 8/32, 1, 1, 1, 1,
+		
+		// Right
+		0.5, 0, 0.5, 0, 8/32, 1, 1, 1, 1,
+		0.5, 0, 0, 0, 16/32, 1, 1, 1, 1,
+		0.5, 0.5, 0, 8/64, 16/32, 1, 1, 1, 1,
+		0.5, 0.5, 0, 8/64, 16/32, 1, 1, 1, 1,
+		0.5, 0.5, 0.5, 8/64, 8/32, 1, 1, 1, 1,
+		0.5, 0, 0.5, 0, 8/32, 1, 1, 1, 1
+	];
+	
+	var buffer = gl.createBuffer();
+	buffer.vertices = vertices.length / 9;
+	gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.DYNAMIC_DRAW );
+	
+	gl.bindTexture( gl.TEXTURE_2D, this.texPlayer );
+	
+	mat4.translate( this.modelMatrix, [ pos.x, pos.y, pos.z ] );
+	gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+	
+	this.drawBuffer( buffer );
+	
+	mat4.identity( this.modelMatrix );
+	gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+	
+	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
+	
+	gl.deleteBuffer( buffer );
 }
 
 // pickAt( min, max, mx, myy )
@@ -275,6 +372,7 @@ Renderer.prototype.loadShaders = function()
 	// Store variable locations
 	this.uProjMat = gl.getUniformLocation( program, "uProjMatrix" );
 	this.uViewMat= gl.getUniformLocation( program, "uViewMatrix" );
+	this.uModelMat= gl.getUniformLocation( program, "uModelMatrix" );
 	this.uSampler = gl.getUniformLocation( program, "uSampler" );
 	this.aPos = gl.getAttribLocation( program, "aPos" );
 	this.aColor = gl.getAttribLocation( program, "aColor" );

@@ -25,6 +25,7 @@ function Player()
 Player.prototype.setWorld = function( world )
 {
 	this.world = world;
+	this.world.localPlayer = this;
 	this.pos = world.spawnPoint;
 	this.velocity = new Vector( 0, 0, 0 );
 	this.angles = [ 0, Math.PI, 0 ];
