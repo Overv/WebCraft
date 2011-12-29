@@ -190,6 +190,11 @@ Client.prototype.onPlayerJoin = function( data )
 
 Client.prototype.onPlayerLeave = function( data )
 {
+	if ( this.world.players[data.nick].nametag ) {
+		this.world.renderer.gl.deleteBuffer( this.world.players[data.nick].nametag.model );
+		this.world.renderer.gl.deleteTexture( this.world.players[data.nick].nametag.texture );
+	}
+	
 	delete this.world.players[data.nick];
 }
 

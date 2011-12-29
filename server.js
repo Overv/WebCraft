@@ -41,7 +41,7 @@ if ( world.loadFromFile( "world" ) ) {
 var server = new modules.network.Server( modules.io, 16 );
 server.setWorld( world );
 server.setLogger( log );
-server.setOneUserPerIp( false );
+server.setOneUserPerIp( true );
 log( "Waiting for clients..." );
 
 // Send a welcome message to new clients

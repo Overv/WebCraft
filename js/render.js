@@ -59,6 +59,7 @@ function Renderer( id )
 	gl.clearColor( 0.62, 0.81, 1.0, 1.0 );
 	gl.enable( gl.DEPTH_TEST );
 	gl.enable( gl.CULL_FACE );
+	gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
 	
 	// Load shaders
 	this.loadShaders();
@@ -109,6 +110,17 @@ function Renderer( id )
 		gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 	};
 	terrainTexture.image.src = "media/terrain.png";
+	
+	// Create canvas used to draw name tags
+	var textCanvas = this.textCanvas = document.createElement( "canvas" );
+	textCanvas.width = 256;
+	textCanvas.height = 64;
+	textCanvas.style.display = "none";
+	var ctx = this.textContext = textCanvas.getContext( "2d" );
+	ctx.textAlign = "left";
+	ctx.textBaseline = "middle";
+	ctx.font = "24px Minecraftia";
+	document.getElementsByTagName( "body" )[0].appendChild( textCanvas );
 }
 
 // draw()
@@ -126,6 +138,9 @@ Renderer.prototype.draw = function()
 	
 	// Draw level chunks
 	var chunks = this.chunks;
+	
+	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
+	
 	if ( chunks != null )
 	{
 		for ( var i = 0; i < chunks.length; i++ )
@@ -138,13 +153,13 @@ Renderer.prototype.draw = function()
 	// Draw players
 	var players = this.world.players;
 	
-	gl.bindTexture( gl.TEXTURE_2D, this.texPlayer );
+	gl.enable( gl.BLEND );
 	
 	for ( var p in world.players )
 	{
 		var player = world.players[p];
 		
-		// Draw head
+		// Draw head		
 		var pitch = player.pitch;
 		if ( pitch < -0.32 ) pitch = -0.32;
 		if ( pitch > 0.32 ) pitch = 0.32;
@@ -155,6 +170,7 @@ Renderer.prototype.draw = function()
 		mat4.rotateX( this.modelMatrix, -pitch );
 		gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
 		
+		gl.bindTexture( gl.TEXTURE_2D, this.texPlayer );
 		this.drawBuffer( this.playerHead );
 		
 		// Draw body
@@ -164,12 +180,78 @@ Renderer.prototype.draw = function()
 		gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
 		
 		this.drawBuffer( this.playerBody );
+		
+		// Draw player name		
+		if ( !player.nametag ) {
+			player.nametag = this.buildPlayerName( player.nick );
+		}
+		
+		// Calculate angle so that the nametag always faces the local player
+		var ang = -Math.PI/2 + Math.atan2( this.camPos[1] - player.y, this.camPos[0] - player.x );
+		
+		mat4.identity( this.modelMatrix );
+		mat4.translate( this.modelMatrix, [ player.x, player.y, player.z + 2.05 ] );
+		mat4.rotateZ( this.modelMatrix, ang );
+		mat4.scale( this.modelMatrix, [ 0.005, 1, 0.005 ] );
+		gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+		
+		gl.bindTexture( gl.TEXTURE_2D, player.nametag.texture );
+		this.drawBuffer( player.nametag.model );
 	}
+	
+	gl.disable( gl.BLEND );
 	
 	mat4.identity( this.modelMatrix );
 	gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+}
+
+// buildPlayerName( nickname )
+//
+// Returns the texture and vertex buffer for drawing the name
+// tag of the specified player.
+
+Renderer.prototype.buildPlayerName = function( nickname )
+{
+	var gl = this.gl;
+	var canvas = this.textCanvas;
+	var ctx = this.textContext;
 	
-	gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
+	var w = ctx.measureText( nickname ).width + 16;
+	var h = 45;
+	
+	// Draw text box
+	ctx.fillStyle = "#000";
+	ctx.fillRect( 0, 0, w, 45 );
+	
+	ctx.fillStyle = "#fff";
+	ctx.fillText( nickname, 10, 20 );
+	
+	// Create texture
+	var tex = gl.createTexture();
+	gl.bindTexture( gl.TEXTURE_2D, tex );
+	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas );
+	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR );
+	gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR );
+	
+	// Create model
+	var vertices = [
+		-w/2, 0, h, w/256, 0, 1, 1, 1, 0.7,
+		w/2, 0, h, 0, 0, 1, 1, 1, 0.7,
+		w/2, 0, 0, 0, h/64, 1, 1, 1, 0.7,
+		w/2, 0, 0, 0, h/64, 1, 1, 1, 0.7,
+		-w/2, 0, 0, w/256, h/64, 1, 1, 1, 0.7,
+		-w/2, 0, h, w/256, 0, 1, 1, 1, 0.7
+	];
+	
+	var buffer = gl.createBuffer();
+	buffer.vertices = vertices.length / 9;
+	gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STATIC_DRAW );
+	
+	return {
+		texture: tex,
+		model: buffer
+	};
 }
 
 // pickAt( min, max, mx, myy )
@@ -222,7 +304,7 @@ Renderer.prototype.pickAt = function( min, max, mx, my )
 	var buffer = gl.createBuffer();
 	buffer.vertices = vertices.length / 9;
 	gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.DYNAMIC_DRAW );
+	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STREAM_DRAW );
 	
 	// Draw buffer
 	gl.bindTexture( gl.TEXTURE_2D, this.texWhite );
@@ -493,6 +575,8 @@ Renderer.prototype.setPerspective = function( fov, min, max )
 Renderer.prototype.setCamera = function( pos, ang )
 {
 	var gl = this.gl;
+	
+	this.camPos = pos;
 	
 	mat4.identity( this.viewMatrix );
 	

@@ -20,12 +20,11 @@
 		<script src="js/network.js" type="text/javascript"></script>
 		
 		<!-- Load socket.io client module from Node.js server at port 3000 -->
-		<!-- WARNING: SUBSTITUTE HARDCODED ADDRESS WITH location.host WHEN COMMITTING!!!!! -->
 		<script type="text/javascript">			
 			var head = document.getElementsByTagName( "head" )[0];
 			var script = document.createElement( "script" );
 			script.type = "text/javascript";
-			script.src = "http://vps.overvprojects.nl:3000/socket.io/socket.io.js";
+			script.src = "http://" + location.host + ":3000/socket.io/socket.io.js";
 			head.appendChild( script );
 		</script>
 	</head>
@@ -115,7 +114,7 @@
 				
 				// Create client and attempt connection
 				client = new Client( io );
-				client.connect( "http://vps.overvprojects.nl:3000", nickname );
+				client.connect( "http://" + location.host + ":3000", nickname );
 				
 				// Update connection status
 				client.on( "connect", function()
