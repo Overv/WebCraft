@@ -6,11 +6,12 @@
 // ==========================================
 
 // Parameters
-var WORLD_SX = 16;
-var WORLD_SY = 16;
-var WORLD_SZ = 16;
-var WORLD_GROUNDHEIGHT = 8;
+var WORLD_SX = 128;
+var WORLD_SY = 128;
+var WORLD_SZ = 32;
+var WORLD_GROUNDHEIGHT = 16;
 var SECONDS_BETWEEN_SAVES = 60;
+var ADMIN_IP = "";
 
 // Load modules
 var modules = {};
@@ -44,17 +45,59 @@ server.setLogger( log );
 server.setOneUserPerIp( true );
 log( "Waiting for clients..." );
 
-// Send a welcome message to new clients
-server.on( "join", function( client, username )
+// Chat commands
+server.on( "chat", function( client, nickname, msg )
 {
-	server.sendMessage( "Welcome! Enjoy your stay, " + username + "!", client );
-	server.broadcastMessage( username + " joined the game.", client );
+	if ( msg == "/spawn" ) {
+		server.setPos( client, world.spawnPoint.x, world.spawnPoint.y, world.spawnPoint.z );
+		return true;
+	} else if ( msg.substr( 0, 3 ) == "/tp" ) {
+		var target = msg.substr( 4 );
+		target = server.findPlayerByName( target );
+		
+		if ( target != null ) {
+				server.setPos( client, target.x, target.y, target.z );
+				server.sendMessage( nickname + " was teleported to " + target.nick + "." );
+				return true;
+		} else {
+			server.sendMessage( "Couldn't find that player!", client );
+			return false;
+		}
+	} else if ( msg.substr( 0, 5 ) == "/kick" && client.handshake.address.address == ADMIN_IP ) {
+		var target = msg.substr( 6 );
+		target = server.findPlayerByName( target );
+		
+		if ( target != null ) {
+				server.kick( target.socket, "Kicked by Overv" );
+				return true;
+		} else {
+			server.sendMessage( "Couldn't find that player!", client );
+			return false;
+		}
+	} else if ( msg == "/list" ) {
+		var playerlist = "";
+		for ( var p in world.players )
+			playerlist += p + ", ";
+		playerlist = playerlist.substring( 0, playerlist.length - 2 );
+		server.sendMessage( "Players: " + playerlist, client );
+		return true;
+	} else if ( msg.substr( 0, 1 ) == "/" ) {
+		server.sendMessage( "Unknown command!", client );
+		return false;
+	}
+} );
+
+// Send a welcome message to new clients
+server.on( "join", function( client, nickname )
+{
+	server.sendMessage( "Welcome! Enjoy your stay, " + nickname + "!", client );
+	server.broadcastMessage( nickname + " joined the game.", client );
 } );
 
 // And let players know of a disconnecting user
-server.on( "leave", function( username )
+server.on( "leave", function( nickname )
 {
-	server.sendMessage( username + " left the game." );
+	server.sendMessage( nickname + " left the game." );
 } );
 
 // Periodical saves
