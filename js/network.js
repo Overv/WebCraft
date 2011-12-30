@@ -182,6 +182,8 @@ Client.prototype.onKick = function( data )
 
 Client.prototype.onPlayerJoin = function( data )
 {
+	data.moving = false;
+	data.aniframe = 0;
 	this.world.players[data.nick] = data;
 }
 
@@ -208,11 +210,19 @@ Client.prototype.onPlayerUpdate = function( data )
 	if ( !this.world ) return;
 	
 	var pl = this.world.players[data.nick];
+	if ( Math.abs(data.x - pl.x) > 0.1 ||
+		 Math.abs(data.y - pl.y) > 0.1 ||
+		 Math.abs(data.z - pl.z) > 0.1)
+	{
+		pl.moving = true;
+	}
+
 	pl.x = data.x;
 	pl.y = data.y;
 	pl.z = data.z;
 	pl.pitch = data.pitch;
 	pl.yaw = data.yaw;
+	window.setTimeout(function(){pl.moving=false},100);
 }
 
 // onPlayerSetPos( data )
