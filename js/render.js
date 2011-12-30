@@ -216,6 +216,8 @@ Renderer.prototype.buildPlayerName = function( nickname )
 	var canvas = this.textCanvas;
 	var ctx = this.textContext;
 	
+	nickname = nickname.replace( /&lt;/g, "<" ).replace( /&gt;/g, ">" ).replace( /&quot;/, "\"" );
+	
 	var w = ctx.measureText( nickname ).width + 16;
 	var h = 45;
 	

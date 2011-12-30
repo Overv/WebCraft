@@ -409,10 +409,11 @@ Server.prototype.onNickname = function( socket, data )
 		{
 			var nickname = s.sanitiseInput( data.nickname );
 			
-			if ( s.activeNicknames[nickname] )
-			{
-				s.kick( socket, "That username is already in use!" );
-				return;
+			for ( var n in s.activeNicknames ) {
+				if ( n.toLowerCase() == nickname.toLowerCase() ) {
+					s.kick( socket, "That username is already in use!" );
+					return;
+				}
 			}
 			
 			if ( s.log ) s.log( "Client " + socket.handshake.address.address + " is now known as " + nickname + "." );

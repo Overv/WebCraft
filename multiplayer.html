@@ -166,19 +166,19 @@
 					page.chatboxEntry.style.visibility = null;
 					
 					// Render loop
-					var lastUpdate = +new Date();
+					var lastUpdate = +new Date() / 1000.0;
 					setInterval( function()
 					{
 						var time = +new Date() / 1000.0;
 						
 						// Update local player
-						if ( time - lastUpdate > 0.033 ) {
-							player.update();
-							lastUpdate = time;
-						}
+						player.update();
 						
 						// Update networked player
-						client.updatePlayer();
+						if ( time - lastUpdate > 0.033 ) {
+							client.updatePlayer();
+							lastUpdate = time;
+						}
 						
 						// Build chunks
 						render.buildChunks( 5 );
