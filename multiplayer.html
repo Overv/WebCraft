@@ -201,6 +201,12 @@
 				// Handle kicking
 				client.on( "kick", function( message )
 				{
+					page.joinInfo.style.visibility = null;
+					page.renderSurface.style.visibility = "hidden";
+					page.materialSelector.style.display = "none";
+					page.chatbox.style.visibility = "hidden";
+					page.chatboxEntry.style.visibility = "hidden";
+					
 					page.joinInfoText.innerHTML = "<span style=\"color: #f00; text-shadow: #a00 2px 2px 0px\">Kicked:</span> " + message;
 				} );
 				

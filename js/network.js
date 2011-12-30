@@ -41,6 +41,7 @@ Client.prototype.connect = function( uri, nickname )
 	socket.on( "join", function( data ) { s.onPlayerJoin( data ); } );
 	socket.on( "leave", function( data ) { s.onPlayerLeave( data ); } );
 	socket.on( "player", function( data ) { s.onPlayerUpdate( data ); } );
+	socket.on( "setpos", function( data ) { s.onPlayerSetPos( data ); } );
 }
 
 // setBlock( x, y, z, mat )
@@ -214,6 +215,16 @@ Client.prototype.onPlayerUpdate = function( data )
 	pl.yaw = data.yaw;
 }
 
+// onPlayerSetPos( data )
+//
+// Called when the server wants to set the position of the local player.
+
+Client.prototype.onPlayerSetPos = function( data )
+{
+	this.world.localPlayer.pos = new Vector( data.x, data.y, data.z );
+	this.world.localPlayer.velocity = new Vector( 0, 0, 0 );
+}
+
 // ==========================================
 // Server
 // ==========================================
@@ -311,10 +322,40 @@ Server.prototype.kick = function( socket, msg )
 {
 	if ( this.log ) this.log( "Client " + socket.handshake.address.address + " was kicked (" + msg + ")." );
 	
-	socket.emit( "kick", {
-		msg: msg
+	var s = this;
+	socket.get( "nickname", function( err, name )
+	{
+		s.sendMessage( name + " was kicked (" + msg + ")." );
+		
+		socket.emit( "kick", {
+			msg: msg
+		} );
+		socket.disconnect();
 	} );
-	socket.disconnect();
+}
+
+// setPos( socket, x, y, z )
+//
+// Request a client to change their position.
+
+Server.prototype.setPos = function( socket, x, y, z )
+{
+	socket.emit( "setpos", {
+		x: x,
+		y: y,
+		z: z
+	} );
+}
+
+// findPlayerByName( name )
+//
+// Attempts to find a player by their nickname.
+
+Server.prototype.findPlayerByName = function( name )
+{
+	for ( var p in this.world.players )
+		if ( p.toLowerCase().indexOf( name.toLowerCase() ) != -1 ) return this.world.players[p];
+	return null;
 }
 
 // onConnection( socket )
@@ -424,6 +465,10 @@ Server.prototype.onNickname = function( socket, data )
 			
 			// Add player to world
 			world.players[nickname] = {
+				socket: socket,
+				nick: nickname,
+				lastBlockCheck: +new Date(),
+				blocks: 0,
 				x: world.spawnPoint.x,
 				y: world.spawnPoint.y,
 				z: world.spawnPoint.z,
@@ -444,7 +489,7 @@ Server.prototype.onBlockUpdate = function( socket, data )
 	
 	if ( typeof( data.x ) != "number" || typeof( data.y ) != "number" || typeof( data.z ) != "number" || typeof( data.mat ) != "number" ) return false;
 	if ( data.x < 0 || data.y < 0 || data.z < 0 || data.x >= world.sx || data.y >= world.sy || data.z >= world.sz ) return false;
-	if ( Math.sqrt( (data.x-world.spawnPoint.x)*(data.x-world.spawnPoint.x) + (data.y-world.spawnPoint.y)*(data.y-world.spawnPoint.y) + (data.z-world.spawnPoint.z)*(data.z-world.spawnPoint.z)  ) < 5 ) return false;
+	if ( Math.sqrt( (data.x-world.spawnPoint.x)*(data.x-world.spawnPoint.x) + (data.y-world.spawnPoint.y)*(data.y-world.spawnPoint.y) + (data.z-world.spawnPoint.z)*(data.z-world.spawnPoint.z)  ) < 10 ) return false;
 	
 	var material = BLOCK.fromId( data.mat );
 	if ( material == null || ( !material.spawnable && data.mat != 0 ) ) return false;
@@ -455,14 +500,30 @@ Server.prototype.onBlockUpdate = function( socket, data )
 	{
 		if ( name != null  )
 		{
-			world.setBlock( data.x, data.y, data.z, material );
-			
-			s.io.sockets.emit( "setblock", {
-				x: data.x,
-				y: data.y,
-				z: data.z,
-				mat: data.mat
-			} );
+			try {
+				world.setBlock( data.x, data.y, data.z, material );
+				
+				var pl = s.world.players[name];
+				pl.blocks++;
+				if ( +new Date() > pl.lastBlockCheck + 1000 ) {
+					if ( pl.blocks > 6 ) {
+						s.kick( socket, "Block spamming." );
+						return;
+					}
+					
+					pl.lastBlockCheck = +new Date();
+					pl.blocks = 0;
+				}
+				
+				s.io.sockets.emit( "setblock", {
+					x: data.x,
+					y: data.y,
+					z: data.z,
+					mat: data.mat
+				} );
+			} catch ( e ) {
+				console.log( "Error setting block at ( " + data.x + ", " + data.y + ", " + data.z + " ): " + e );
+			}
 		}
 	} );
 }
@@ -484,11 +545,17 @@ Server.prototype.onChatMessage = function( socket, data )
 		{
 			if ( s.log ) s.log( "<" + name + "> " + msg );
 			
-			s.io.sockets.emit( "msg", {
-				type: "chat",
-				user: name,
-				msg: msg
-			} );
+			var callback = false;
+			if  ( s.eventHandlers["chat"] ) callback = s.eventHandlers.chat( socket, name, msg );
+			
+			if ( !callback )
+			{
+				s.io.sockets.emit( "msg", {
+					type: "chat",
+					user: name,
+					msg: msg
+				} );
+			}
 		}
 	} );
 }
