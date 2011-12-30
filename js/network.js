@@ -325,7 +325,8 @@ Server.prototype.kick = function( socket, msg )
 	var s = this;
 	socket.get( "nickname", function( err, name )
 	{
-		s.sendMessage( name + " was kicked (" + msg + ")." );
+		if ( name != null )
+			s.sendMessage( name + " was kicked (" + msg + ")." );
 		
 		socket.emit( "kick", {
 			msg: msg
@@ -505,8 +506,8 @@ Server.prototype.onBlockUpdate = function( socket, data )
 				
 				var pl = s.world.players[name];
 				pl.blocks++;
-				if ( +new Date() > pl.lastBlockCheck + 1000 ) {
-					if ( pl.blocks > 6 ) {
+				if ( +new Date() > pl.lastBlockCheck + 100 ) {
+					if ( pl.blocks > 5 ) {
 						s.kick( socket, "Block spamming." );
 						return;
 					}
@@ -609,16 +610,19 @@ Server.prototype.onDisconnect = function( socket )
 	var s = this;
 	socket.get( "nickname", function( err, name )
 	{
-		delete s.activeNicknames[name];
-		delete s.world.players[name];
-		
-		// Inform other players
-		socket.broadcast.emit( "leave", {
-			nick: name
-		} );
-		
-		if ( s.eventHandlers["leave"] )
-			s.eventHandlers.leave( name );
+		if ( name != null )
+		{		
+			delete s.activeNicknames[name];
+			delete s.world.players[name];
+			
+			// Inform other players
+			socket.broadcast.emit( "leave", {
+				nick: name
+			} );
+			
+			if ( s.eventHandlers["leave"] )
+				s.eventHandlers.leave( name );
+		}
 	} );
 }
 
