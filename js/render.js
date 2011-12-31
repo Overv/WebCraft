@@ -164,7 +164,7 @@ Renderer.prototype.draw = function()
 			if(player.aniframe > Math.PI)
 				player.aniframe  = -Math.PI;
 			aniangle = Math.PI/2 * Math.sin(player.aniframe);
-			if(Math.abs(aniangle) < 0.1 )
+			if(!player.moving && Math.abs(aniangle) < 0.1 )
 				player.aniframe = 0;
 
 
