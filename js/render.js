@@ -160,7 +160,7 @@ Renderer.prototype.draw = function()
 		var player = world.players[p];
 
 		if(player.moving || Math.abs(player.aniframe) > 0.1){
-			player.aniframe += 0.2;
+			player.aniframe += 0.15;
 			if(player.aniframe > Math.PI)
 				player.aniframe  = -Math.PI;
 			aniangle = Math.PI/2 * Math.sin(player.aniframe);
