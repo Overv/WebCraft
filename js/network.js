@@ -576,6 +576,13 @@ Server.prototype.onChatMessage = function( socket, data )
 //
 // Called when a client sends a position/orientation update.
 
+function normaliseAngle( ang )
+{
+	ang = ang % (Math.PI*2);
+	if ( ang < 0 ) ang = Math.PI*2 + ang;
+	return ang;
+}
+
 Server.prototype.onPlayerUpdate = function( socket, data )
 {
 	if ( typeof( data.x ) != "number" || typeof( data.y ) != "number" || typeof( data.z ) != "number" ) return false;
@@ -595,14 +602,26 @@ Server.prototype.onPlayerUpdate = function( socket, data )
 			pl.yaw = data.yaw;
 			
 			// Forward update to other players
-			socket.volatile.broadcast.emit( "player", {
-				nick: name,
-				x: pl.x,
-				y: pl.y,
-				z: pl.z,
-				pitch: pl.pitch,
-				yaw: pl.yaw
-			} );
+			for ( var p in s.world.players ) {
+				var tpl = s.world.players[p];
+				if ( tpl.socket == socket ) continue;
+				
+				var ang = Math.PI + Math.atan2( tpl.y - pl.y, tpl.x - pl.x );
+				var nyaw = Math.PI - tpl.yaw - Math.PI/2;
+				var inFrustrum = Math.abs( normaliseAngle( nyaw ) - normaliseAngle( ang ) ) < Math.PI/2;
+				
+				if ( inFrustrum )
+				{
+					tpl.socket.volatile.emit( "player", {
+						nick: name,
+						x: pl.x,
+						y: pl.y,
+						z: pl.z,
+						pitch: pl.pitch,
+						yaw: pl.yaw
+					} );
+				}
+			}
 		}
 	} );
 }
