@@ -1,3 +1,5 @@
+# This project is no longer actively developed
+
 WebCraft (HTML5 Minecraft)
 ---------------------
 [![GitHub issues](https://img.shields.io/github/issues/Overv/WebCraft.svg)](https://github.com/Overv/WebCraft/issues)
